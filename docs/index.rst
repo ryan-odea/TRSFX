@@ -26,4 +26,7 @@ documentation for details.
 
    vignettes/included
 
+.. include:: ../README.md
+   :parser: myst_parser.sphinx_
+
 
