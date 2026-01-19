@@ -3,11 +3,9 @@ requires = ["setuptools >= 61.0", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "psi-utils"
+name = "psi_utils"
 version = "0.1.0"
 description = "Crystallographic Utilities from the Standfuss group out of PSI"
-license = "MIT"
-license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.8"
 
@@ -36,9 +34,20 @@ classifiers = [
 dependencies = [
     "storageCat>=1.0.2",
     "hatTrick>=0.2.1",
-    "meteor-maps>=0.4.0"
+    "meteor-maps>=0.4.0",
+    "reciprocalspaceship>=1.0.7",
+    "click>=8.3.1",
+    "seaborn>=0.13.2",
+    "matplotlib>=3.10.7",
+    "numpy>=2.3.5",
+    "gemmi>=0.7.3",
+    "natsort>=8.4.0"
 ]
 
 [project.urls]
 repository = "https://github.com/ryan-odea/psi-utils"
+
+[project.scripts]
+"psi.manip" = "psi_utils.manipulation.cli:cli"
+"psi.compare" = "psi_utils.compare.cli:cli"
 
