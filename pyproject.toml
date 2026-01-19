@@ -3,7 +3,7 @@ requires = ["setuptools >= 61.0", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "psi_utils"
+name = "TRSFX"
 version = "0.1.0"
 description = "Crystallographic Utilities from the Standfuss group out of PSI"
 readme = "README.md"
@@ -58,9 +58,9 @@ dev = [
 ]
 
 [project.urls]
-repository = "https://github.com/ryan-odea/psi-utils"
+repository = "https://github.com/ryan-odea/TRSFX"
 
 [project.scripts]
-"psi.manip" = "psi_utils.manipulation.cli:cli"
-"psi.compare" = "psi_utils.compare.cli:cli"
+"sfx.manip" = "TRSFX.manipulation.cli:cli"
+"sfx.compare" = "TRSFX.compare.cli:cli"
 

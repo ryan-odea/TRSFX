@@ -13,4 +13,4 @@ matplotlib
 numpy
 gemmi
 natsort
-psi_utils
+TRSFX

@@ -5,12 +5,12 @@ import os
 import sys
 from datetime import date
 
-version = importlib.metadata.version("psi-utils")
+version = importlib.metadata.version("TRSFX")
 if not version:
     version = None
 sys.path.insert(0, os.path.abspath("../"))
 
-project = "psi-utils"
+project = "TRSFX"
 copyright = f"{date.today().year}, Ryan O'Dea"
 author = "Ryan O'Dea"
 release = version

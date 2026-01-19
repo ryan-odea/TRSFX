@@ -1,9 +1,9 @@
-.. psi-utils documentation master file, created by
+.. TRSFX documentation master file, created by
    sphinx-quickstart on Fri Jan 16 14:25:01 2026.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-psi-utils documentation
+TRSFX documentation
 =======================
 
 Add your content using ``reStructuredText`` syntax. See the
@@ -16,8 +16,8 @@ documentation for details.
    :hidden:
    :caption: Python API:
 
-   psi_utils/compare
-   psi_utils/manipulation
+   TRSFX/compare
+   TRSFX/manipulation
 
 .. toctree::
    :maxdepth: 2
