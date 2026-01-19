@@ -1,4 +1,4 @@
-from .map_correlation import corr_heatmap, map_correlation
+from .map_corr import corr_heatmap, map_correlation
 
 __all__ = [
     "map_correlation",

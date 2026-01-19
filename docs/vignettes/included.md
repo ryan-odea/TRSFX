@@ -119,3 +119,8 @@ The primary challenge is, if you come from phenix, you must translate the mtz fi
 ```bash
 for i in *_phenix.mtz; do psi.manip phenix-to-meteor $i; done
 ```
+
+After this, you can use meteor as you would like, I find phaseboost particularly good at creating nice difference maps:
+```bash
+for i in *.mtz; do meteor.phaseboost $i /path/to/dark -o meteor_map_${i} -s /path/to/pdb -m metadata_${i}.json; done
+```

@@ -3,9 +3,9 @@ from pathlib import Path
 import click
 from natsort import natsorted
 
-from .map_correlation import COLUMN_PRESETS
-from .map_correlation import corr_heatmap as heatmap_func
-from .map_correlation import map_correlation as corr_func
+from .map_corr import COLUMN_PRESETS
+from .map_corr import corr_heatmap as heatmap_func
+from .map_corr import map_correlation as corr_func
 
 
 @click.group()

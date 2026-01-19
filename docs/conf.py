@@ -1,27 +1,39 @@
 # Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+import importlib.metadata
+import os
+import sys
+from datetime import date
+
+version = importlib.metadata.version("psi-utils")
+if not version:
+    version = None
+sys.path.insert(0, os.path.abspath("../"))
 
 project = "psi-utils"
-copyright = "2026, Ryan O'Dea"
+copyright = f"{date.today().year}, Ryan O'Dea"
 author = "Ryan O'Dea"
-release = "0.1.0"
+release = version
 
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.autosummary",
+    "sphinx_copybutton",
+    "sphinx_autodoc_typehints",
+    "myst_parser",
+]
 
-extensions = []
-
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "seaborn": ("https://seaborn.pydata.org/", None),
+}
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = []
 
-
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
-html_theme = "alabaster"
+html_theme = "piccolo_theme"
 html_static_path = ["_static"]

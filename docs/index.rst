@@ -13,5 +13,17 @@ documentation for details.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :hidden:
+   :caption: Python API:
+
+   psi_utils/compare
+   psi_utils/manipulation
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Vignettes:
+
+   vignettes/included
+
 

@@ -1,0 +1,16 @@
+sphinx
+piccolo_theme
+sphinx-autodoc-typehints
+sphinx-copybutton
+myst-parser
+storageCat
+hatTrick
+meteor-maps
+reciprocalspaceship
+click
+seaborn
+matplotlib
+numpy
+gemmi
+natsort
+psi_utils

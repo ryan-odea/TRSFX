@@ -41,7 +41,20 @@ dependencies = [
     "matplotlib>=3.10.7",
     "numpy>=2.3.5",
     "gemmi>=0.7.3",
-    "natsort>=8.4.0"
+    "natsort>=8.4.0",
+    "pandas>=2.3.3",
+]
+
+[dependency-groups]
+dev = [
+    "black",
+    "isort",
+    "pytest",
+    "myst-parser",
+    "piccolo_theme",
+    "sphinx",
+    "sphinx-copybutton",
+    "sphinx-autodoc-typehints"
 ]
 
 [project.urls]
