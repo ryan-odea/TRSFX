@@ -1,7 +1,9 @@
 # Included (but not exported) packages
+
 With the installation of this package, you'll find both [`hatTrick`](https://github.com/ryan-odea/hatTrick), [`storageCat`](https://github.com/ryan-odea/storageCat), and [`meteor`](https://github.com/rs-station/meteor) included (but not used elsewhere in the package). All these serve to be utility functions related to the standfuss group at PSI. For these packages, you can consider this a 'metapackage', or a collection of commonly used packages following from a single import call. You can find documentation on their use in their respective repositories; however, I will also echo examples here:
 
 ## storageCat
+
 The more useful of the included, not exported, pacakges is `storageCat`. This package is a lightweight tool to make the archival process to [sciCat](https://www.scicatproject.org/) a breeze. Instead of building your metadata file by hand - this package asks you a series of questions through the cli and then builds it for you.
 
 The entire experience around storagecat is meant to be streamlined through three command line calls. First you create, then you check, then you submit (and don't forget to login to scicat and accept the upload!)
@@ -27,6 +29,7 @@ storageCat submit
 ```
 
 ## hatTrick (HATRX)
+
 hatTrick is more of a data science package for encoding and decoding of crystallographic files following the hadamard transform. The steps are relatively simple - first you provide raw crystallographic files to be encoded follinwg the hadamard transform, then you proceed as normal through your indexing pipeline. The decoding step occurs when you have hkl files. For this example, we will use `crystfel`.
 
 ### Example Usage (With Crystfel)
@@ -36,6 +39,7 @@ While this package does support access through the python api, it is more simple
 For our example, let's assume we have 45 frames, each of 5ms, and want to do a rank 3 encoding of our data.
 
 #### (1) Encoding Data
+
 This step intakes a list file containing information of where to find your .h5 data as well as information about your data (how many frames you would like to encode, how many frames exist in your data).
 
 ```bash
@@ -112,15 +116,18 @@ hatrx decode -n 3 -p "data_110-*.hkl" -p "data_101-*.hkl" -p "data_011-*.hkl" -o
 ```
 
 ## Meteor
+
 `Meteor` is a tool for computing difference maps, specializing in the identification of weak signals. In addition to being very powerful at creating nice looking difference maps, meteor is also very simple to use. Phaseboost being particularly interesting at developing good looking difference maps.
 
 The primary challenge is, if you come from phenix, you must translate the mtz files to files expected by meteor. This package provides such cli tools.
 
 ```bash
-for i in *_phenix.mtz; do psi.manip phenix-to-meteor $i; done
+for i in *_phenix.mtz; do psi.manip crystfel-to-meteor $i; done
 ```
 
 After this, you can use meteor as you would like, I find phaseboost particularly good at creating nice difference maps:
 ```bash
-for i in *.mtz; do meteor.phaseboost $i /path/to/dark -o meteor_map_${i} -s /path/to/pdb -m metadata_${i}.json; done
+for i in *.mtz; 
+do meteor.phaseboost $i /path/to/dark -o meteor_map_${i} -s /path/to/pdb -m metadata_${i}.json; 
+done
 ```

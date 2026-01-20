@@ -3,7 +3,7 @@ import reciprocalspaceship as rs
 from reciprocalspaceship.algorithms import scale_merged_intensities
 
 
-def phenix_to_meteor(input: str = None, output: str = None) -> None:
+def crystfel_to_meteor(input: str = None, output: str = None) -> None:
     """
     Converts Phenix-processed MTZ files to Meteor-ready MTZ files
 

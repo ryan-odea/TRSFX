@@ -1,5 +1,7 @@
-from .phenix_to_meteor import phenix_to_meteor
+from .crystfel_to_meteor import crystfel_to_meteor
+from .sample_stream import sample_crystals
 
 __all__ = [
-    "phenix_to_meteor",
+    "crystfel_to_meteor",
+    "sample_crystals",
 ]
