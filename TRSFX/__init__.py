@@ -1,12 +1,7 @@
 from .compare import corr_heatmap, map_correlation
-from .manipulation import (
-    crystfel_to_meteor,
-    read_stream,
-    write_stream,
-    plot_peak_dist,
-    plot_time_series,
-    sample_crystals,
-)
+from .manipulation import (crystfel_to_meteor, sample_crystals)
+from ._utils import read_stream, write_stream
+from .explore import plot_peak_dist, plot_time_series
 
 __version__ = "0.2.0"
 
@@ -14,5 +9,10 @@ __all__ = [
     "map_correlation",
     "corr_heatmap",
     "crystfel_to_meteor",
+    "sample_crystals",
+    "read_stream",
+    "write_stream",
+    "plot_peak_dist",
+    "plot_time_series",
     "__version__",
 ]

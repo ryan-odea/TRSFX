@@ -63,4 +63,5 @@ repository = "https://github.com/ryan-odea/TRSFX"
 [project.scripts]
 "sfx.manip" = "TRSFX.manipulation.cli:cli"
 "sfx.compare" = "TRSFX.compare.cli:cli"
+"sfx.explore" = "TRSFX.explore.cli:cli"
 
