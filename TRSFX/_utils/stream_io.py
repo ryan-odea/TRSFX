@@ -1,9 +1,6 @@
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
-
-import matplotlib.pyplot as plt
 
 
 @dataclass
@@ -120,7 +117,7 @@ def read_stream(filepath: str | Path) -> Stream:
 
         chunks.append(chunk)
 
-        return Stream(preamble=preamble, chunks=chunks)
+    return Stream(preamble=preamble, chunks=chunks)
 
 
 def write_stream(preamble: str, chunks: list[Chunk], output: str | Path) -> None:
