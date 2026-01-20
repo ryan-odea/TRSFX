@@ -17,6 +17,7 @@ documentation for details.
    :caption: Python API:
 
    TRSFX/compare
+   TRFSX/explore
    TRSFX/manipulation
 
 .. toctree::
@@ -25,6 +26,9 @@ documentation for details.
    :caption: Vignettes:
 
    vignettes/included
+   vignettes/compare
+   vignettes/explore
+   vignettes/manip
 
 .. include:: ../README.md
    :parser: myst_parser.sphinx_
