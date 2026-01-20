@@ -17,7 +17,7 @@ documentation for details.
    :caption: Python API:
 
    TRSFX/compare
-   TRFSX/explore
+   TRSFX/explore
    TRSFX/manipulation
 
 .. toctree::
