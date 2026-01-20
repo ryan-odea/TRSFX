@@ -108,19 +108,19 @@ def map_cc(
     \b
     Examples:
         # Basic usage with glob
-        psi.manipulation map-cc -g "data/*.mtz" -p heatmap.png
+        sfx.compare map-cc -g "data/*.mtz" -p heatmap.png
 
         # With time labels and resolution cutoff
-        psi.manipulation map-cc -g "*.mtz" -t 5ms --d-min 2.5 -n 21
+        sfx.compare map-cc -g "*.mtz" -t 5ms --d-min 2.5 -n 21
 
         # Range-style time labels
-        psi.manipulation map-cc -g "*.mtz" -t 5ms --time-ranges
+        sfx.compare map-cc -g "*.mtz" -t 5ms --time-ranges
 
         # Explicit files, preserve order
-        psi.manipulation map-cc a.mtz b.mtz c.mtz --no-sort
+        sfx.compare map-cc a.mtz b.mtz c.mtz --no-sort
 
         # Force column preset
-        psi.manipulation map-cc -g "*.mtz" --columns phenix
+        sfx.compare map-cc -g "*.mtz" --columns phenix
     """
 
     if glob_pattern:

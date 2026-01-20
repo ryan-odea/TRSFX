@@ -30,7 +30,7 @@ def crystfel_to_meteor(input, output):
     Example usage:
 
     \b
-        psi-crystfel-to-meteor input_file.mtz --output output_file.mtz
+        sfx.manip crystfel-to-meteor input_file.mtz --output output_file.mtz
     """
     func(input=input, output=output)
 

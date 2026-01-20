@@ -1,4 +1,4 @@
-File comparison (MTZ/HKL)
+File comparison
 =========================
 .. automodule:: TRSFX.compare
     :members:
