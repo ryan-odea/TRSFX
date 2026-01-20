@@ -64,3 +64,25 @@ def peak_dist(input, output, bins):
         fig.savefig(output)
     else:
         plt.show()
+
+@cli.command()
+@click.argument("input", type=click.Path(exists=True))
+@click.argument("output", type=click.Path())
+def consistent_crystals(input, output):
+    """
+    Command-line interface to find files with consistently indexed crystals from a stream file.
+
+    Example usage:
+
+    \b
+        sfx.explore consistent-crystals input.stream output.lst
+    """
+    from ._indexing_related import get_consistent_crystals
+    from .._utils.list_io import write_list
+
+    stream = read_stream(input)
+    consistent_files = get_consistent_crystals(stream)
+    if consistent_files:
+        write_list(consistent_files, output)
+    else:
+        click.echo("No consistently indexed files found.")
