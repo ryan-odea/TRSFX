@@ -7,7 +7,7 @@ This submodule provides tools to manipulate and change files, rather than either
 Crystfel and meteor use different data in the creation of their difference maps. Crystfel uses intensities while meteor used amplitudes. This function provides a wrapped around a french-wilson to change these crystfel intensities to amplitudes useable by meteor. As mentioned previously in the meteor section of the documentation, this is done with
 
 ```bash
-for i in *_phenix.mtz; do psi.manip crystfel-to-meteor $i; done
+for i in *_crystfel.mtz; do psi.manip crystfel-to-meteor $i; done
 ```
 
 ## sample-crystals
