@@ -1,9 +1,10 @@
 from typing import Optional
+
 import matplotlib.pyplot as plt
 import numpy as np
 
+from .._utils.stream_io import Chunk, Stream
 
-from .._utils.stream_io import Stream, Chunk
 
 def get_consistent_crystals(stream: Stream) -> list[str]:
     """
@@ -26,6 +27,7 @@ def get_consistent_crystals(stream: Stream) -> list[str]:
             consistent_files.append(filename)
 
     return sorted(consistent_files)
+
 
 def indexing_stats(stream: Stream) -> dict[str, dict]:
     """
@@ -55,6 +57,7 @@ def indexing_stats(stream: Stream) -> dict[str, dict]:
 
     return stats
 
+
 def plot_stats(
     stream: Stream,
     output: Optional[str] = None,
@@ -72,26 +75,41 @@ def plot_stats(
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    ax.hist(values, bins=bins, range=bin_range, alpha=0.7,
-            color='steelblue', edgecolor='black')
+    ax.hist(
+        values,
+        bins=bins,
+        range=bin_range,
+        alpha=0.7,
+        color="steelblue",
+        edgecolor="black",
+    )
 
     ax.set_xlabel(xlabel, fontsize=12)
-    ax.set_ylabel('Number of Files', fontsize=12)
+    ax.set_ylabel("Number of Files", fontsize=12)
     ax.set_title(title, fontsize=14)
     ax.grid(True, alpha=0.3)
 
     n_files = len(values)
     n_fully_indexed = sum(1 for s in stats.values() if s["fraction_indexed"] == 1.0)
-    avg_fraction = np.mean([s["fraction_indexed"] for s in stats.values()]) if stats else 0
+    avg_fraction = (
+        np.mean([s["fraction_indexed"] for s in stats.values()]) if stats else 0
+    )
 
     stats_text = f"Total files: {n_files}\nFully indexed: {n_fully_indexed}\nMean rate: {avg_fraction:.1%}"
-    ax.text(0.98, 0.98, stats_text, transform=ax.transAxes, fontsize=10,
-            verticalalignment='top', horizontalalignment='right',
-            bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    ax.text(
+        0.98,
+        0.98,
+        stats_text,
+        transform=ax.transAxes,
+        fontsize=10,
+        verticalalignment="top",
+        horizontalalignment="right",
+        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+    )
 
     plt.tight_layout()
 
     if output:
-        plt.savefig(output, dpi=150, bbox_inches='tight')
+        plt.savefig(output, dpi=150, bbox_inches="tight")
 
     return fig

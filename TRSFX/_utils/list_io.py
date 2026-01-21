@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 def write_list(filenames: list[str], output: str | Path) -> None:
     """
     Write a list of filenames.

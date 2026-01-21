@@ -65,11 +65,16 @@ def peak_dist(input, output, bins):
     else:
         plt.show()
 
+
 @cli.command()
 @click.argument("input", type=click.Path(exists=True))
 @click.argument("output", type=click.Path())
-@click.option("--plot", "-p", type=click.Path(), default=None, help="Output plot file path.")
-@click.option("--bins", "-b", type=int, default=20, help="Number of bins for histogram.")
+@click.option(
+    "--plot", "-p", type=click.Path(), default=None, help="Output plot file path."
+)
+@click.option(
+    "--bins", "-b", type=int, default=20, help="Number of bins for histogram."
+)
 def consistent_crystals(input, output, plot, bins):
     """
     Command-line interface to find files with consistently indexed crystals from a stream file.
@@ -79,8 +84,8 @@ def consistent_crystals(input, output, plot, bins):
     \b
         sfx.explore consistent-crystals input.stream output.lst
     """
-    from .indexing_related import get_consistent_crystals, plot_stats
     from .._utils.list_io import write_list
+    from .indexing_related import get_consistent_crystals, plot_stats
 
     stream = read_stream(input)
     consistent_files = get_consistent_crystals(stream)
@@ -89,8 +94,8 @@ def consistent_crystals(input, output, plot, bins):
         write_list(consistent_files, output)
     else:
         click.echo("No consistently indexed files found.")
-    
+
     if plot:
         fig = plot_stats(stream, output=plot, bins=bins)
         fig.savefig(plot)
-    return 
+    return
