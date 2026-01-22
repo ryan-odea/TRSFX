@@ -43,6 +43,7 @@ dependencies = [
     "gemmi>=0.7.3",
     "natsort>=8.4.0",
     "pandas>=2.3.3",
+    "submitit>=1.5.4",
 ]
 
 [dependency-groups]
