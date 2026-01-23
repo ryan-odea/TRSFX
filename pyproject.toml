@@ -43,6 +43,8 @@ dependencies = [
     "gemmi>=0.7.3",
     "natsort>=8.4.0",
     "pandas>=2.3.3",
+    "submitit>=1.5.1",
+    "h5py>=3.11.0",
 ]
 
 [dependency-groups]
@@ -64,4 +66,5 @@ repository = "https://github.com/ryan-odea/TRSFX"
 "sfx.manip" = "TRSFX.manipulation.cli:cli"
 "sfx.compare" = "TRSFX.compare.cli:cli"
 "sfx.explore" = "TRSFX.explore.cli:cli"
+"sfx.index" = "TRSFX.indexer.cli:cli"
 

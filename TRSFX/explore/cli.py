@@ -1,9 +1,10 @@
 import click
 from matplotlib import pyplot as plt
 
-from .._utils import read_stream
+from .._utils import read_stream, write_list
 from .stream import plot_peak_dist
 from .stream import plot_time_series as ts_func
+from .indexing_related import get_consistent_crystals, plot_consecutive_stats
 
 
 @click.group()
@@ -79,13 +80,14 @@ def consistent_crystals(input, output, plot, bins):
     """
     Command-line interface to find files with consistently indexed crystals from a stream file.
 
+    Optionally plots the distribution of consecutive indexed frame run lengths.
+
     Example usage:
 
     \b
         sfx.explore consistent-crystals input.stream output.lst
+        sfx.explore consistent-crystals input.stream output.lst --plot dist.png
     """
-    from .._utils.list_io import write_list
-    from .indexing_related import get_consistent_crystals, plot_stats
 
     stream = read_stream(input)
     consistent_files = get_consistent_crystals(stream)
@@ -96,6 +98,6 @@ def consistent_crystals(input, output, plot, bins):
         click.echo("No consistently indexed files found.")
 
     if plot:
-        fig = plot_stats(stream, output=plot, bins=bins)
+        fig = plot_consecutive_stats(stream, output=plot, bins=bins)
         fig.savefig(plot)
     return

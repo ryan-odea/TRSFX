@@ -48,8 +48,7 @@ def plot_time_series(
     x = np.arange(len(peaks))
 
     colors = ["coral" if c.hit else "steelblue" for c in sorted]
-    ax.scatter(x, peaks, c=colors, alpha=0.7, edgecolor="black")
-    ax.plot(x, peaks, linestyle="--", alpha=0.5, color="gray")
+    ax.scatter(x, peaks, c=colors, alpha=0.1)
     ax.set_xlabel("Frame (Image:Event Number)", fontsize=12)
     ax.set_ylabel("Number of Peaks", fontsize=12)
     ax.set_title("Time Series of Peaks per Crystal (Ordered)", fontsize=14)

@@ -29,54 +29,72 @@ def get_consistent_crystals(stream: Stream) -> list[str]:
     return sorted(consistent_files)
 
 
-def indexing_stats(stream: Stream) -> dict[str, dict]:
+def consecutive_stats(stream: Stream) -> list[int]:
     """
-    Get indexing statistics for each file in the stream.
+    Get lengths of consecutive indexed frame sequences across all files.
+
+    For each file, frames are sorted by event number. Consecutive runs of
+    indexed frames are counted. E.g., if frames 0,1,2,3 are indexed, then
+    frame 4 is not, then frames 5,6 are indexed, this yields [4, 2].
 
     :param stream: Parsed Stream object
     :type stream: Stream
-    :return: Dict mapping filename to stats dict with keys:
-             'total_frames', 'indexed_frames', 'fraction_indexed'
-    :rtype: dict[str, dict]
+    :return: List of consecutive run lengths across all files
+    :rtype: list[int]
     """
     from collections import defaultdict
 
-    chunks: dict[str, list[Chunk]] = defaultdict(list)
+    chunks_by_file: dict[str, list[Chunk]] = defaultdict(list)
     for c in stream.chunks:
-        chunks[c.filename].append(c)
+        chunks_by_file[c.filename].append(c)
 
-    stats = {}
-    for filename, chunks in chunks.items():
-        total = len(chunks)
-        indexed = sum(1 for c in chunks if c.crystals)
-        stats[filename] = {
-            "total_frames": total,
-            "indexed_frames": indexed,
-            "fraction_indexed": indexed / total if total > 0 else 0.0,
-        }
+    all_runs = []
 
-    return stats
+    for _, chunks in chunks_by_file.items():
+        sorted_chunks = sorted(chunks, key=lambda c: c.event_number)
+
+        current_run = 0
+        for chunk in sorted_chunks:
+            if chunk.crystals:
+                current_run += 1
+            else:
+                if current_run > 0:
+                    all_runs.append(current_run)
+                    current_run = 0
+
+        if current_run > 0:
+            all_runs.append(current_run)
+
+    return all_runs
 
 
-def plot_stats(
+def plot_consecutive_stats(
     stream: Stream,
     output: Optional[str] = None,
     bins: int = 20,
 ) -> plt.Figure:
     """
-    Plot distribution of indexed frame counts (or fractions) per file.
-    """
-    stats = indexing_stats(stream)
+    Plot distribution of consecutive indexed frame run lengths.
 
-    values = [s["indexed_frames"] for s in stats.values()]
-    xlabel = "Number of Indexed Frames"
-    title = "Distribution of Indexed Frame Counts per File"
-    bin_range = (0, max(values) + 1) if values else (0, 10)
+    :param stream: Parsed Stream object
+    :type stream: Stream
+    :param output: Optional path to save the figure
+    :type output: Optional[str]
+    :param bins: Number of histogram bins
+    :type bins: int
+    :return: matplotlib Figure object
+    :rtype: plt.Figure
+    """
+    runs = consecutive_stats(stream)
+
+    xlabel = "Consecutive Indexed Frames"
+    title = "Distribution of Consecutive Indexed Frame Runs"
+    bin_range = (0, max(runs) + 1) if runs else (0, 10)
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
     ax.hist(
-        values,
+        runs,
         bins=bins,
         range=bin_range,
         alpha=0.7,
@@ -85,17 +103,17 @@ def plot_stats(
     )
 
     ax.set_xlabel(xlabel, fontsize=12)
-    ax.set_ylabel("Number of Files", fontsize=12)
+    ax.set_ylabel("Count", fontsize=12)
     ax.set_title(title, fontsize=14)
     ax.grid(True, alpha=0.3)
 
-    n_files = len(values)
-    n_fully_indexed = sum(1 for s in stats.values() if s["fraction_indexed"] == 1.0)
-    avg_fraction = (
-        np.mean([s["fraction_indexed"] for s in stats.values()]) if stats else 0
-    )
+    n_runs = len(runs)
+    avg_run = np.mean(runs) if runs else 0
+    max_run = max(runs) if runs else 0
 
-    stats_text = f"Total files: {n_files}\nFully indexed: {n_fully_indexed}\nMean rate: {avg_fraction:.1%}"
+    stats_text = (
+        f"Total runs: {n_runs}\nMean length: {avg_run:.1f}\nMax length: {max_run}"
+    )
     ax.text(
         0.98,
         0.98,
