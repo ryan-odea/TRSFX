@@ -1,7 +1,7 @@
 import random
 from typing import Optional
 
-from .._utils import Chunk, Stream, read_stream, write_stream
+from .._utils import Chunk, Stream
 
 
 def sample_crystals(

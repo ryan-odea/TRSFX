@@ -1,5 +1,6 @@
+from .h5_io import read_h5
+from .list_io import split_list, subsample_list, write_list
 from .stream_io import Chunk, Stream, read_stream, write_stream
-from .list_io import write_list, subsample_list, split_list
 
 __all__ = [
     "read_stream",
@@ -9,4 +10,5 @@ __all__ = [
     "write_list",
     "subsample_list",
     "split_list",
+    "read_h5",
 ]

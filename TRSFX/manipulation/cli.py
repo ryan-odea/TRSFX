@@ -1,5 +1,4 @@
 import click
-import matplotlib.pyplot as plt
 
 from .._utils import read_stream, write_stream
 from .crystfel_to_meteor import crystfel_to_meteor as func

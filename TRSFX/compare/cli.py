@@ -3,6 +3,8 @@ from pathlib import Path
 import click
 from natsort import natsorted
 
+from .._utils import read_h5
+from .hd5_corr import stability
 from .map_corr import COLUMN_PRESETS
 from .map_corr import corr_heatmap as heatmap_func
 from .map_corr import map_correlation as corr_func
@@ -166,6 +168,29 @@ def map_cc(
             vmin=vmin,
             vmax=vmax,
         )
+
+
+@cli.command()
+@click.argument("input", type=click.Path(exists=True))
+@click.option(
+    "--output", "-o", type=click.Path(exists=False), help="Output filename for corr map"
+)
+@click.option("--start", type=int, help="Start index for correlation mapping")
+@click.option("--stop", type=int, help="Stop index for correlation mapping")
+@click.option("--local_corr", type=int, help="Size of correlation locality kernel")
+def hd5_cc(input, start, stop, local_corr, output):
+    """
+    Local pixel correlation between HD5 files
+
+    \b
+    Examples:
+        # Correlation between frames 2 and 3, 3 surround pixel correlation
+    sfx.compare hd5-cc filename.h5 --start 2 --stop 3 --local-corr 3 -o output.png
+    """
+    frames = read_h5(filename=input)
+    stability(
+        frames, start_idx=start, end_idx=stop, kernel_size=local_corr, filename=output
+    )
 
 
 if __name__ == "__main__":

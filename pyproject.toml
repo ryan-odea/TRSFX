@@ -45,6 +45,7 @@ dependencies = [
     "pandas>=2.3.3",
     "submitit>=1.5.1",
     "h5py>=3.11.0",
+    "hdf5plugin>=6.0.0",
 ]
 
 [dependency-groups]

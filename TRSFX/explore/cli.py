@@ -2,9 +2,9 @@ import click
 from matplotlib import pyplot as plt
 
 from .._utils import read_stream, write_list
+from .indexing_related import get_consistent_crystals, plot_consecutive_stats
 from .stream import plot_peak_dist
 from .stream import plot_time_series as ts_func
-from .indexing_related import get_consistent_crystals, plot_consecutive_stats
 
 
 @click.group()

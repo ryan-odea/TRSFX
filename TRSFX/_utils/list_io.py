@@ -1,6 +1,6 @@
-from pathlib import Path
 import random
-from typing import Union, List
+from pathlib import Path
+from typing import List, Union
 
 
 def write_list(filenames: list[str], output: str | Path) -> None:
