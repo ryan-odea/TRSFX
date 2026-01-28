@@ -6,5 +6,5 @@ This function builds a difference map - difference map correlation matrix and wi
 Similarly in 'like' filetypes, you should expect that the file structure is also the same - this function will try to translate the files for you (crystfel or meteor mtz files) but between structure is not officially supported.
 
 ```bash
-psi.compare map-cc -g "data/*.mtz" -p heatmap.png
+sfx.compare map-cc -g "data/*.mtz" -p heatmap.png
 ```

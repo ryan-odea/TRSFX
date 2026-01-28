@@ -4,7 +4,7 @@ import click
 from natsort import natsorted
 
 from .._utils import read_h5
-from .hd5_corr import stability
+from .hd5_corr import trace
 from .map_corr import COLUMN_PRESETS
 from .map_corr import corr_heatmap as heatmap_func
 from .map_corr import map_correlation as corr_func
@@ -172,25 +172,30 @@ def map_cc(
 
 @cli.command()
 @click.argument("input", type=click.Path(exists=True))
+@click.option("--start", type=int, help="Start index for the correlation trace")
+@click.option("--stop", type=int, help="Stop index for the correlation trace")
 @click.option(
-    "--output", "-o", type=click.Path(exists=False), help="Output filename for corr map"
+    "--output",
+    "-o",
+    type=click.Path(exists=False),
+    help="Output filename for the trace plot",
 )
-@click.option("--start", type=int, help="Start index for correlation mapping")
-@click.option("--stop", type=int, help="Stop index for correlation mapping")
-@click.option("--local_corr", type=int, help="Size of correlation locality kernel")
-def hd5_cc(input, start, stop, local_corr, output):
+def hd5_trace(input, start, stop, output):
     """
-    Local pixel correlation between HD5 files
+    Calculates the scalar Pearson correlation coefficient for every consecutive pair of frames
+    and plots it as a time series - primarily for finding a crystal size as a number of frames.
 
-    \b
-    Examples:
-        # Correlation between frames 2 and 3, 3 surround pixel correlation
-    sfx.compare hd5-cc filename.h5 --start 2 --stop 3 --local-corr 3 -o output.png
+    :param frames: List of numpy arrays.
+    :type frames: list
+    :param start: Start frame index. Defaults to 0.
+    :type start: int, optional
+    :param stop: End frame index. Defaults to None.
+    :type stop: int, optional
+    :param filename: File path to save the output/plot. Defaults to None.
+    :type filename: str or Path, optional
     """
     frames = read_h5(filename=input)
-    stability(
-        frames, start_idx=start, end_idx=stop, kernel_size=local_corr, filename=output
-    )
+    trace(frames, start, stop, True, filename=output)
 
 
 if __name__ == "__main__":

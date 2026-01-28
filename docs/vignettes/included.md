@@ -122,7 +122,7 @@ hatrx decode -n 3 -p "data_110-*.hkl" -p "data_101-*.hkl" -p "data_011-*.hkl" -o
 The primary challenge is, if you come from phenix, you must translate the mtz files to files expected by meteor. This package provides such cli tools.
 
 ```bash
-for i in *_crystfel.mtz; do psi.manip crystfel-to-meteor $i; done
+for i in *_crystfel.mtz; do sfx.manip crystfel-to-meteor $i; done
 ```
 
 After this, you can use meteor as you would like, I find phaseboost particularly good at creating nice difference maps:

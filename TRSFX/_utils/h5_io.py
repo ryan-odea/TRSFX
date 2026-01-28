@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List, Union
 
 import h5py
+import hdf5plugin
 import numpy as np
 
 
@@ -27,8 +28,3 @@ def read_h5(filename: Union[str, Path]) -> List[np.ndarray]:
         f.visititems(visitor_func)
 
     return frames
-
-
-frames = read_h5(
-    "/das/work/p17/p17489/PROCESS/20180722_SMX/BR/pump_probe/run1_data_035320.h5"
-)
