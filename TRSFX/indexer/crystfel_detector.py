@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Optional, Union
 
 import submitit
 
-from .._utils import split_list
-from ._configs import AlignDetectorConfig, IndexamajigConfig
+from ._configs import AlignDetectorConfig, IndexamajigConfig, SlurmConfig
+from ._utils import split_list
 
 
 class DetectorRefinement:
@@ -12,6 +12,19 @@ class DetectorRefinement:
     Two-stage detector geometry refinement using Millepede.
 
     Generates calibration data then aligns detector panels.
+
+    Example
+    -------
+    >>> ref = DetectorRefinement(
+    ...     directory="refinement_output",
+    ...     list_file="events.lst",
+    ...     geometry="detector.geom",
+    ...     cell_file="cell.pdb",
+    ...     params={"indexing": "xgandalf"},
+    ... )
+    >>> ref.submit()  # Submit mille generation jobs
+    >>> ref.align()   # Wait for mille, then submit alignment
+    >>> print(ref.refined_geometry)  # Path to refined geometry
     """
 
     def __init__(
@@ -24,7 +37,7 @@ class DetectorRefinement:
         modules: List[str] | None = None,
         n_jobs: int = 10,
         mille_level: int = 2,
-        slurm_directives: Dict[str, Any] | None = None,
+        slurm: SlurmConfig | None = None,
         align_flags: Dict[str, bool] | None = None,
         verbose: bool = False,
     ):
@@ -35,7 +48,7 @@ class DetectorRefinement:
         self.geometry = Path(geometry).resolve()
         self.cell_file = Path(cell_file).resolve()
         self.modules = modules
-        self.slurm_directives = slurm_directives or {}
+        self.slurm = slurm or SlurmConfig()
         self.mille_level = mille_level
 
         self.mille_dir = self.directory / "mille_bins"
@@ -86,17 +99,17 @@ class DetectorRefinement:
         executor = submitit.AutoExecutor(folder=self.logs_dir)
 
         for i, config in enumerate(self.configs):
-            directives = dict(self.slurm_directives)
-            directives.setdefault("job_name", f"mille_{i:03d}")
+            directives = self.slurm.to_dict()
+            directives["slurm_job_name"] = f"mille_{i:03d}"
             executor.update_parameters(**directives)
 
-            func = submitit.helpers.CommandFunction([config._cmd_str], shell=True)
+            func = submitit.helpers.CommandFunction(["bash", "-c", config._cmd_str])
             job = executor.submit(func)
             self.mille_jobs.append(job)
 
         return self.mille_jobs
 
-    def align(self, slurm_directives: Dict[str, Any] | None = None) -> submitit.Job:
+    def align(self, slurm: SlurmConfig | None = None) -> submitit.Job:
         """Wait for mille jobs and submit the alignment job."""
         for job in self.mille_jobs:
             job.wait()
@@ -108,15 +121,19 @@ class DetectorRefinement:
         align_logs = self.directory / "align_logs"
         align_logs.mkdir(exist_ok=True)
 
-        directives = slurm_directives or dict(self.slurm_directives)
-        directives.setdefault("job_name", "align_detector")
-        directives.setdefault("mem_gb", 32)
+        align_slurm = slurm or SlurmConfig(
+            time=self.slurm.time,
+            mem_gb=max(self.slurm.mem_gb, 150),
+            partition=self.slurm.partition,
+            job_name="align_detector",
+        )
 
+        directives = align_slurm.to_dict()
         executor = submitit.AutoExecutor(folder=align_logs)
         executor.update_parameters(**directives)
 
         func = submitit.helpers.CommandFunction(
-            [self.align_config._cmd_str], shell=True
+            ["bash", "-c", self.align_config._cmd_str]
         )
         self.align_job = executor.submit(func)
 

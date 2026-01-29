@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Optional, Union
 
 import submitit
 
+from ._configs import SlurmConfig
+
 
 def _build_flags(params: Dict[str, Any]) -> List[str]:
     parts = []
@@ -85,7 +87,7 @@ class Ambigator:
         symmetry: str,
         params: Dict[str, Any] | None = None,
         modules: List[str] | None = None,
-        slurm_directives: Dict[str, Any] | None = None,
+        slurm: SlurmConfig | None = None,
         verbose: bool = False,
     ):
         self.directory = Path(directory)
@@ -98,7 +100,7 @@ class Ambigator:
         self.logs_dir.mkdir(exist_ok=True)
 
         self.modules = modules
-        self.slurm_directives = slurm_directives or {}
+        self.slurm = slurm or SlurmConfig()
         self.job: Optional[submitit.Job] = None
 
         self.config = AmbigatorConfig(
@@ -112,11 +114,12 @@ class Ambigator:
     def submit(self) -> submitit.Job:
         executor = submitit.AutoExecutor(folder=self.logs_dir)
 
-        directives = dict(self.slurm_directives)
-        directives.setdefault("job_name", "ambigator")
+        directives = self.slurm.to_dict()
+        if "slurm_job_name" not in directives:
+            directives["slurm_job_name"] = "ambigator"
         executor.update_parameters(**directives)
 
-        func = submitit.helpers.CommandFunction([self.config._cmd_str], shell=True)
+        func = submitit.helpers.CommandFunction(["bash", "-c", self.config._cmd_str])
         self.job = executor.submit(func)
 
         return self.job
@@ -147,7 +150,7 @@ class Partialator:
         output_name: str = "merged",
         params: Dict[str, Any] | None = None,
         modules: List[str] | None = None,
-        slurm_directives: Dict[str, Any] | None = None,
+        slurm: SlurmConfig | None = None,
         verbose: bool = False,
     ):
         self.directory = Path(directory)
@@ -160,7 +163,7 @@ class Partialator:
         self.logs_dir.mkdir(exist_ok=True)
 
         self.modules = modules
-        self.slurm_directives = slurm_directives or {}
+        self.slurm = slurm or SlurmConfig()
         self.job: Optional[submitit.Job] = None
 
         self.config = PartialatorConfig(
@@ -174,11 +177,12 @@ class Partialator:
     def submit(self) -> submitit.Job:
         executor = submitit.AutoExecutor(folder=self.logs_dir)
 
-        directives = dict(self.slurm_directives)
-        directives.setdefault("job_name", "partialator")
+        directives = self.slurm.to_dict()
+        if "slurm_job_name" not in directives:
+            directives["slurm_job_name"] = "partialator"
         executor.update_parameters(**directives)
 
-        func = submitit.helpers.CommandFunction([self.config._cmd_str], shell=True)
+        func = submitit.helpers.CommandFunction(["bash", "-c", self.config._cmd_str])
         self.job = executor.submit(func)
 
         return self.job

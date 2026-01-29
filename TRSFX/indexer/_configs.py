@@ -4,6 +4,121 @@ from typing import Any, Dict, List, Optional, Union
 
 
 @dataclass
+class SlurmConfig:
+    """Configuration for SLURM job submission."""
+
+    time: int = 360  # minutes
+    mem_gb: int = 8
+    partition: Optional[str] = None
+    job_name: Optional[str] = None
+    extra: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to submitit-compatible directives."""
+        directives = {
+            "slurm_time": self.time,
+            "mem_gb": self.mem_gb,
+        }
+        if self.partition:
+            directives["slurm_partition"] = self.partition
+        if self.job_name:
+            directives["slurm_job_name"] = self.job_name
+        directives.update(self.extra)
+        return directives
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "SlurmConfig":
+        """Create from a dictionary, extracting known keys."""
+        known = {"time", "mem_gb", "partition", "job_name"}
+        kwargs = {k: v for k, v in d.items() if k in known}
+        extra = {k: v for k, v in d.items() if k not in known}
+        return cls(**kwargs, extra=extra)
+
+
+@dataclass
+class GridSearchConfig:
+    """
+    Configuration for indexamajig parameter grid search.
+
+    Validates that grid parameters are properly structured and
+    don't conflict with base parameters.
+    """
+
+    base_params: Dict[str, Any]
+    grid_params: Dict[str, List[Any]]
+    n_subsample: int = 1000
+    n_jobs_per_run: int = 4
+
+    def __post_init__(self):
+        self._validate()
+
+    def _validate(self):
+        """Validate grid search configuration."""
+        errors = []
+
+        if not self.base_params:
+            errors.append("base_params cannot be empty")
+
+        if not self.grid_params:
+            errors.append("grid_params cannot be empty")
+
+        # Check grid_params structure
+        for key, values in self.grid_params.items():
+            if not isinstance(values, list):
+                errors.append(
+                    f"grid_params['{key}'] must be a list, got {type(values).__name__}"
+                )
+            elif len(values) == 0:
+                errors.append(f"grid_params['{key}'] cannot be empty")
+
+        # Warn about overlapping keys (grid overrides base)
+        overlap = set(self.base_params.keys()) & set(self.grid_params.keys())
+        if overlap:
+            # This is allowed but worth noting - grid params override base
+            pass
+
+        if errors:
+            raise ValueError(
+                "GridSearchConfig validation failed:\n"
+                + "\n".join(f"  - {e}" for e in errors)
+            )
+
+    @property
+    def n_combinations(self) -> int:
+        """Total number of parameter combinations."""
+        from functools import reduce
+        from operator import mul
+
+        if not self.grid_params:
+            return 0
+        return reduce(mul, (len(v) for v in self.grid_params.values()), 1)
+
+    @property
+    def parameter_names(self) -> List[str]:
+        """Names of parameters being searched."""
+        return list(self.grid_params.keys())
+
+    def iter_combinations(self):
+        """Iterate over all parameter combinations."""
+        import itertools
+
+        keys = list(self.grid_params.keys())
+        for values in itertools.product(*self.grid_params.values()):
+            grid_vals = dict(zip(keys, values))
+            yield {**self.base_params, **grid_vals}
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "GridSearchConfig":
+        """Create from a dictionary (e.g., loaded from JSON config)."""
+        return cls(
+            base_params=d.get("base_params", d.get("indexing_params", {})),
+            grid_params=d.get("grid_params", {}),
+            n_subsample=d.get("n_subsample", 1000),
+            n_jobs_per_run=d.get("n_jobs_per_run", 4),
+        )
+
+
+@dataclass
 class IndexamajigConfig:
     """Configuration for a single indexamajig invocation."""
 

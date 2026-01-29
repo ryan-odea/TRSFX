@@ -1,6 +1,7 @@
+import random
 import shutil
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 import h5py
 
@@ -50,6 +51,77 @@ def expand_event_list(
             for i in range(start_index, start_index + n_frames):
                 tag = event_pattern.format(i=i)
                 f.write(f"{filepath} {tag}\n")
+
+    return output_list
+
+
+def split_list(
+    source_list: Union[str, Path],
+    output_dir: Union[str, Path],
+    n_chunks: int,
+) -> List[Path]:
+    """
+    Split an event list into n_chunks roughly equal parts.
+
+    Returns list of paths to chunk files.
+    """
+    source_list = Path(source_list)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    lines = [ln for ln in source_list.read_text().splitlines() if ln.strip()]
+    n_lines = len(lines)
+
+    if n_chunks > n_lines:
+        n_chunks = n_lines
+
+    chunk_size = n_lines // n_chunks
+    remainder = n_lines % n_chunks
+
+    chunks = []
+    start = 0
+
+    for i in range(n_chunks):
+        # Distribute remainder across first chunks
+        end = start + chunk_size + (1 if i < remainder else 0)
+        chunk_lines = lines[start:end]
+        start = end
+
+        if not chunk_lines:
+            continue
+
+        chunk_path = output_dir / f"chunk_{i:04d}.lst"
+        chunk_path.write_text("\n".join(chunk_lines) + "\n")
+        chunks.append(chunk_path)
+
+    return chunks
+
+
+def subsample_list(
+    source_list: Union[str, Path],
+    output_list: Union[str, Path],
+    n_samples: int,
+    seed: int | None = None,
+) -> Path:
+    """
+    Randomly subsample events from a list file.
+
+    If n_samples exceeds the number of events, returns all events.
+    """
+    source_list = Path(source_list)
+    output_list = Path(output_list)
+
+    lines = [ln for ln in source_list.read_text().splitlines() if ln.strip()]
+
+    if n_samples >= len(lines):
+        sampled = lines
+    else:
+        if seed is not None:
+            random.seed(seed)
+        sampled = random.sample(lines, n_samples)
+
+    output_list.parent.mkdir(parents=True, exist_ok=True)
+    output_list.write_text("\n".join(sampled) + "\n")
 
     return output_list
 

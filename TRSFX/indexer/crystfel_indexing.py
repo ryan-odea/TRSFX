@@ -1,15 +1,11 @@
-import csv
-import itertools
-import json
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import submitit
 
-from .._utils import split_list, subsample_list
-from ._configs import IndexamajigConfig
-from .crystfel_detector import DetectorRefinement
+from ._configs import GridSearchConfig, IndexamajigConfig, SlurmConfig
+from ._utils import split_list
 
 
 class Indexamajig:
@@ -17,7 +13,19 @@ class Indexamajig:
     Manages parallel indexamajig execution over chunked input lists.
 
     Splits input into chunks and prepares jobs. Call `submit()` to launch.
-    Use the `grid_search()` classmethod to optimize parameters first.
+    Use `GridSearch` class for parameter optimization.
+
+    Example
+    -------
+    >>> idx = Indexamajig(
+    ...     directory="indexing_output",
+    ...     list_file="events.lst",
+    ...     geometry="detector.geom",
+    ...     params={"indexing": "xgandalf", "peaks": "peakfinder8"},
+    ...     cell_file="cell.pdb",
+    ...     n_jobs=100,
+    ... )
+    >>> idx.submit()
     """
 
     _STATS_PATTERN = re.compile(
@@ -35,7 +43,7 @@ class Indexamajig:
         cell_file: Optional[Union[str, Path]] = None,
         modules: List[str] | None = None,
         n_jobs: int = 100,
-        slurm_directives: Dict[str, Any] | None = None,
+        slurm: SlurmConfig | None = None,
         verbose: bool = False,
     ):
         self.directory = Path(directory)
@@ -49,7 +57,7 @@ class Indexamajig:
 
         self.params = params
         self.modules = modules
-        self.slurm_directives = slurm_directives or {}
+        self.slurm = slurm or SlurmConfig()
         self.jobs: List[submitit.Job] = []
         self.configs: List[IndexamajigConfig] = []
 
@@ -72,11 +80,12 @@ class Indexamajig:
         executor = submitit.AutoExecutor(folder=self.logs_dir)
 
         for i, config in enumerate(self.configs):
-            directives = dict(self.slurm_directives)
-            directives.setdefault("job_name", f"idx_{i:04d}")
+            directives = self.slurm.to_dict()
+            if "slurm_job_name" not in directives:
+                directives["slurm_job_name"] = f"idx_{i:04d}"
             executor.update_parameters(**directives)
 
-            func = submitit.helpers.CommandFunction([config._cmd_str], shell=True)
+            func = submitit.helpers.CommandFunction(["bash", "-c", config._cmd_str])
             job = executor.submit(func)
             self.jobs.append(job)
 
@@ -110,26 +119,61 @@ class Indexamajig:
         modules: List[str] | None = None,
         n_subsample: int = 1000,
         n_jobs_per_run: int = 4,
-        slurm_directives: Dict[str, Any] | None = None,
+        slurm: SlurmConfig | None = None,
         verbose: bool = False,
-    ) -> "_Grid":
+    ) -> "GridSearch":
         """
         Create a grid search over indexamajig parameters.
 
-        Subsamples the input list and runs indexamajig with every combination
-        of parameters in `grid_params`.
+        This is a convenience method. For more control, use GridSearch directly.
+
+        Parameters
+        ----------
+        directory : path
+            Output directory for grid search results
+        list_file : path
+            Input event list file
+        geometry : path
+            Detector geometry file
+        base_params : dict
+            Base indexamajig parameters (applied to all runs)
+        grid_params : dict
+            Parameters to search over. Values must be lists.
+        cell_file : path, optional
+            Unit cell file
+        modules : list, optional
+            Environment modules to load
+        n_subsample : int
+            Number of events to subsample for testing
+        n_jobs_per_run : int
+            Number of parallel jobs per parameter combination
+        slurm : SlurmConfig, optional
+            SLURM configuration
+        verbose : bool
+            Print progress information
+
+        Returns
+        -------
+        GridSearch
+            Configured grid search ready for submission
         """
-        return _Grid(
+        from .crystfel_grid_search import GridSearch
+
+        config = GridSearchConfig(
+            base_params=base_params,
+            grid_params=grid_params,
+            n_subsample=n_subsample,
+            n_jobs_per_run=n_jobs_per_run,
+        )
+
+        return GridSearch(
             directory=directory,
             list_file=list_file,
             geometry=geometry,
-            base_params=base_params,
-            grid_params=grid_params,
+            config=config,
             cell_file=cell_file,
             modules=modules,
-            n_subsample=n_subsample,
-            n_jobs_per_run=n_jobs_per_run,
-            slurm_directives=slurm_directives,
+            slurm=slurm,
             verbose=verbose,
         )
 
@@ -144,13 +188,45 @@ class Indexamajig:
         modules: List[str] | None = None,
         n_jobs: int = 10,
         mille_level: int = 2,
-        slurm_directives: Dict[str, Any] | None = None,
+        slurm: SlurmConfig | None = None,
         align_flags: Dict[str, bool] | None = None,
         verbose: bool = False,
     ) -> "DetectorRefinement":
         """
         Create a detector refinement workflow using Millepede.
+
+        Parameters
+        ----------
+        directory : path
+            Output directory
+        list_file : path
+            Input event list
+        geometry : path
+            Initial detector geometry
+        cell_file : path
+            Unit cell file (required for refinement)
+        params : dict
+            Indexamajig parameters
+        modules : list, optional
+            Environment modules to load
+        n_jobs : int
+            Number of parallel mille jobs
+        mille_level : int
+            Millepede hierarchy level (1-3)
+        slurm : SlurmConfig, optional
+            SLURM configuration
+        align_flags : dict, optional
+            Flags for align_detector (camera_length, out_of_plane, etc.)
+        verbose : bool
+            Print progress information
+
+        Returns
+        -------
+        DetectorRefinement
+            Configured refinement ready for submission
         """
+        from .crystfel_detector import DetectorRefinement
+
         return DetectorRefinement(
             directory=directory,
             list_file=list_file,
@@ -160,7 +236,7 @@ class Indexamajig:
             modules=modules,
             n_jobs=n_jobs,
             mille_level=mille_level,
-            slurm_directives=slurm_directives,
+            slurm=slurm,
             align_flags=align_flags,
             verbose=verbose,
         )
@@ -192,120 +268,3 @@ class Indexamajig:
             "hit_rate": round(100 * stats["hits"] / total, 2),
             "indexing_rate": round(100 * stats["indexable"] / total, 2),
         }
-
-    from pathlib import Path
-
-
-class _Grid:
-    """
-    Grid search over indexamajig parameters.
-    """
-
-    def __init__(
-        self,
-        directory: Union[str, Path],
-        list_file: Union[str, Path],
-        geometry: Union[str, Path],
-        base_params: Dict[str, Any],
-        grid_params: Dict[str, List[Any]],
-        cell_file: Optional[Union[str, Path]] = None,
-        modules: List[str] | None = None,
-        n_subsample: int = 1000,
-        n_jobs_per_run: int = 4,
-        slurm_directives: Dict[str, Any] | None = None,
-        verbose: bool = False,
-    ):
-        self.directory = Path(directory)
-        self.directory.mkdir(parents=True, exist_ok=True)
-        self.verbose = verbose
-
-        self.base_params = base_params
-        self.grid_params = grid_params
-        self.modules = modules
-        self.slurm_directives = slurm_directives or {}
-        self.runs: List[Indexamajig] = []
-        self._results: Optional[List[Dict[str, Any]]] = None
-
-        subsample_path = self.directory / "subsample.lst"
-        subsample_list(list_file, subsample_path, n_subsample)
-
-        keys = list(grid_params.keys())
-        combinations = list(itertools.product(*grid_params.values()))
-
-        for i, values in enumerate(combinations):
-            grid_vals = dict(zip(keys, values))
-            run_params = {**base_params, **grid_vals}
-
-            run = Indexamajig(
-                directory=self.directory / f"run_{i:03d}",
-                list_file=subsample_path,
-                geometry=geometry,
-                params=run_params,
-                cell_file=cell_file,
-                modules=modules,
-                n_jobs=n_jobs_per_run,
-                slurm_directives=slurm_directives,
-                verbose=verbose,
-            )
-            self.runs.append(run)
-
-    def submit(self) -> List[submitit.Job]:
-        """Submit all grid search jobs to the cluster."""
-        all_jobs = []
-        for run in self.runs:
-            all_jobs.extend(run.submit())
-
-        self._save_manifest()
-        return all_jobs
-
-    @property
-    def results(self) -> List[Dict[str, Any]]:
-        """Wait for all jobs and return ranked results."""
-        if self._results is not None:
-            return self._results
-
-        results = []
-        for i, run in enumerate(self.runs):
-            run_result = run.results
-            run_result["run_id"] = f"run_{i:03d}"
-            results.append(run_result)
-
-        results.sort(key=lambda x: x["indexing_rate"], reverse=True)
-        self._results = results
-        self._save_csv(results)
-
-        return results
-
-    @property
-    def best_params(self) -> Dict[str, Any]:
-        """Parameters from the best-performing run."""
-        if not self.results:
-            return {}
-        return self.results[0]["params"]
-
-    def _save_manifest(self) -> None:
-        manifest = [
-            {
-                "run_id": f"run_{i:03d}",
-                "directory": str(run.directory),
-                "params": run.params,
-            }
-            for i, run in enumerate(self.runs)
-        ]
-        with open(self.directory / "manifest.json", "w") as f:
-            json.dump(manifest, f, indent=2)
-
-    def _save_csv(self, results: List[Dict[str, Any]]) -> None:
-        if not results:
-            return
-
-        flat = []
-        for r in results:
-            row = {k: v for k, v in r.items() if k != "params"}
-            row.update(r["params"])
-            flat.append(row)
-
-        with open(self.directory / "grid_summary.csv", "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=flat[0].keys())
-            writer.writeheader()
-            writer.writerows(flat)
