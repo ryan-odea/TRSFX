@@ -29,7 +29,7 @@ def _build_flags(params: Dict[str, Any]) -> List[str]:
 class AmbigatorConfig:
     input_stream: Path
     output_stream: Path
-    symmetry: str
+    true_symmetry: str 
     params: Dict[str, Any] = field(default_factory=dict)
 
     def to_cli(self, modules: List[str] | None = None) -> str:
@@ -41,7 +41,7 @@ class AmbigatorConfig:
         cmd = [
             "ambigator",
             f"-o {self.output_stream}",
-            f"-y {self.symmetry}",
+            f"-y {self.true_symmetry}",
         ]
         cmd.extend(_build_flags(self.params))
         cmd.append(str(self.input_stream))
@@ -78,13 +78,22 @@ class PartialatorConfig:
 
 
 class Ambigator:
-    """Resolves indexing ambiguities when point group symmetry is lower than lattice symmetry."""
+    """
+    Resolves indexing ambiguities when point group symmetry is lower than lattice symmetry.
+
+    Parameters
+    ----------
+    true_symmetry : str
+        The true point group symmetry of the structure (-y)
+    apparent_symmetry : str
+        The apparent lattice symmetry (-w), used to determine the ambiguity operator
+    """
 
     def __init__(
         self,
         directory: Union[str, Path],
         input_stream: Union[str, Path],
-        symmetry: str,
+        true_symmetry: str,
         params: Dict[str, Any] | None = None,
         modules: List[str] | None = None,
         slurm: SlurmConfig | None = None,
@@ -106,7 +115,7 @@ class Ambigator:
         self.config = AmbigatorConfig(
             input_stream=self.input_stream,
             output_stream=self.output_stream,
-            symmetry=symmetry,
+            true_symmetry=true_symmetry,
             params=params or {},
         )
         self.config.to_cli(modules)
