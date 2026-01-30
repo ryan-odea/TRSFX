@@ -27,8 +27,11 @@ def detect_n_frames(h5_path: Union[str, Path], dataset: str = "/data/data") -> i
         if n_frames is not None:
             return n_frames
 
-    raise ValueError(f"Could not find a valid image dataset in {h5_path}. "
-                     f"Keys found: {list(f.keys())}")
+    raise ValueError(
+        f"Could not find a valid image dataset in {h5_path}. "
+        f"Keys found: {list(f.keys())}"
+    )
+
 
 def expand_event_list(
     source_list: Union[str, Path],

@@ -399,7 +399,12 @@ def ambigator(
 @click.option("--model", default="xsphere")
 @click.option("--iterations", default=1)
 @click.option("--push-res", default=1.5)
-@click.option("--unmerged-output", is_flag=True, default=False, help="Output unmerged reflections (.unmerged)")
+@click.option(
+    "--unmerged-output",
+    is_flag=True,
+    default=False,
+    help="Output unmerged reflections (.unmerged)",
+)
 @click.option("--jobs", "-j", default=32)
 @click.option("--time", default=1440)
 @click.option("--mem", default=128)
