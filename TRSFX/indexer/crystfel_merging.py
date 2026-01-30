@@ -29,7 +29,7 @@ def _build_flags(params: Dict[str, Any]) -> List[str]:
 class AmbigatorConfig:
     input_stream: Path
     output_stream: Path
-    true_symmetry: str 
+    true_symmetry: str
     params: Dict[str, Any] = field(default_factory=dict)
 
     def to_cli(self, modules: List[str] | None = None) -> str:
