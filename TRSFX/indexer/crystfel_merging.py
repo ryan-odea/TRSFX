@@ -41,7 +41,7 @@ class AmbigatorConfig:
         cmd = [
             "ambigator",
             f"-o {self.output_stream}",
-            f"-w {self.symmetry}",
+            f"-y {self.symmetry}",
         ]
         cmd.extend(_build_flags(self.params))
         cmd.append(str(self.input_stream))
@@ -68,7 +68,7 @@ class PartialatorConfig:
             "partialator",
             f"-i {self.input_stream}",
             f"-o {self.output_hkl}",
-            f"-y {self.symmetry}",
+            f"-w {self.symmetry}",
         ]
         cmd.extend(_build_flags(self.params))
 
