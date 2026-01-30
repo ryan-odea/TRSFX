@@ -22,7 +22,7 @@ def cli():
 @cli.command()
 @click.option("--file-list", "-i", required=True, type=click.Path(exists=True))
 @click.option("--output", "-o", required=True, type=click.Path())
-@click.option("--pattern", default="//{i}")
+@click.option("--pattern", default="//")
 def expand(file_list, output, pattern):
     """Expand file list to event list."""
     expand_event_list(
@@ -401,8 +401,6 @@ def ambigator(
 @click.option("--push-res", default=1.5)
 @click.option(
     "--unmerged-output",
-    is_flag=True,
-    default=False,
     help="Output unmerged reflections (.unmerged)",
 )
 @click.option("--jobs", "-j", default=32)

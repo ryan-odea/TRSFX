@@ -37,7 +37,7 @@ def expand_event_list(
     source_list: Union[str, Path],
     output_list: Union[str, Path],
     n_frames: int | None = None,
-    event_pattern: str = "//{i}",
+    event_pattern: str = "//",
     start_index: int = 0,
 ) -> Path:
     """
@@ -65,8 +65,7 @@ def expand_event_list(
     with open(output_list, "w") as f:
         for filepath in files:
             for i in range(start_index, start_index + n_frames):
-                tag = event_pattern.format(i=i)
-                f.write(f"{filepath} {tag}\n")
+                f.write(f"{filepath} {event_pattern}{i} {i}\n")
 
     return output_list
 
