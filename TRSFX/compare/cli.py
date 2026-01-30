@@ -168,10 +168,15 @@ def map_cc(
             vmax=vmax,
         )
 
+
 @cli.command()
 @click.argument("input", type=str)
-@click.option("--start", type=int, default=0, help="Start index for the correlation trace")
-@click.option("--stop", type=int, default=None, help="Stop index for the correlation trace")
+@click.option(
+    "--start", type=int, default=0, help="Start index for the correlation trace"
+)
+@click.option(
+    "--stop", type=int, default=None, help="Stop index for the correlation trace"
+)
 @click.option(
     "--output",
     "-o",
@@ -179,8 +184,12 @@ def map_cc(
     required=True,
     help="Output filename for the CSV",
 )
-@click.option("--plot", "-p", is_flag=True, help="Save trace plots as <input>_trace.png")
-@click.option("--log-space/--linear", default=True, help="Use log10 transform for correlation")
+@click.option(
+    "--plot", "-p", is_flag=True, help="Save trace plots as <input>_trace.png"
+)
+@click.option(
+    "--log-space/--linear", default=True, help="Use log10 transform for correlation"
+)
 def hd5_trace(input, start, stop, output, plot, log_space):
     """
     Calculates frame-to-frame Pearson correlation coefficients for HDF5 files.

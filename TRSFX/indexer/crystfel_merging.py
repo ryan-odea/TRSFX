@@ -145,12 +145,13 @@ class PartialatorConfig:
             f"-o {self.output_hkl}",
             f"-y {self.symmetry}",
         ]
-        
+
         cmd.extend(_build_flags(self.params))
 
         cmd_parts.append(" ".join(cmd))
         self._cmd_str = " && ".join(cmd_parts)
         return self._cmd_str
+
 
 class Partialator:
     """Merges and scales crystallographic reflections with partiality correction."""
@@ -220,8 +221,10 @@ class Partialator:
             "hkl1": self.directory / f"{stem}.hkl1",
             "hkl2": self.directory / f"{stem}.hkl2",
         }
-        
-        if self.config.params.get("unmerged-output") or self.config.params.get("unmerged_output"):
+
+        if self.config.params.get("unmerged-output") or self.config.params.get(
+            "unmerged_output"
+        ):
             files["unmerged"] = self.directory / f"{stem}.unmerged"
-            
+
         return files

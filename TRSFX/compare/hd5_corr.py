@@ -1,9 +1,11 @@
 import csv
 from pathlib import Path
-from typing import Union, List, Tuple
+from typing import List, Tuple, Union
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import pearsonr
+
 from .._utils import read_h5
 
 
@@ -40,7 +42,9 @@ def trace(
 
     output_path = Path(output_csv)
     with open(output_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["filename", "index", "corr_coef", "p_value"])
+        writer = csv.DictWriter(
+            f, fieldnames=["filename", "index", "corr_coef", "p_value"]
+        )
         writer.writeheader()
 
         for filepath in files:
@@ -50,12 +54,14 @@ def trace(
             )
 
             for idx, corr, pval in zip(indices, correlations, pvalues):
-                writer.writerow({
-                    "filename": str(filepath),
-                    "index": idx,
-                    "corr_coef": corr,
-                    "p_value": pval,
-                })
+                writer.writerow(
+                    {
+                        "filename": str(filepath),
+                        "index": idx,
+                        "corr_coef": corr,
+                        "p_value": pval,
+                    }
+                )
 
             if plot:
                 plot_path = filepath.with_name(f"{filepath.stem}_trace.png")
@@ -118,8 +124,13 @@ def _plot_trace(
     """Generate and save correlation trace plot."""
     plt.figure(figsize=(12, 5))
     plt.plot(
-        indices, correlations,
-        marker="o", markersize=3, linestyle="-", linewidth=1, color="royalblue",
+        indices,
+        correlations,
+        marker="o",
+        markersize=3,
+        linestyle="-",
+        linewidth=1,
+        color="royalblue",
     )
     mode = "Log" if log_space else "Linear"
     plt.title(f"Frame-to-Frame Correlation Trace ({mode}) - {title_suffix}")
