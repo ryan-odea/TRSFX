@@ -92,7 +92,9 @@ def grid_search(
         raise click.ClickException(f"Input list file is empty: {list_file}")
 
     if n_subsample > n_events:
-        click.echo(f"Warning: --n-subsample ({n_subsample}) > events in file ({n_events}), using all events")
+        click.echo(
+            f"Warning: --n-subsample ({n_subsample}) > events in file ({n_events}), using all events"
+        )
         n_subsample = n_events
 
     invalid_keys = [k for k, v in grid.items() if not isinstance(v, list)]
@@ -247,7 +249,16 @@ def refine(
 @click.option("--camera-length/--no-camera-length", default=True)
 @click.option("--out-of-plane/--no-out-of-plane", default=False)
 def align(
-    directory, geometry, output, modules, level, time, mem, partition, camera_length, out_of_plane
+    directory,
+    geometry,
+    output,
+    modules,
+    level,
+    time,
+    mem,
+    partition,
+    camera_length,
+    out_of_plane,
 ):
     """Run detector alignment on existing mille data."""
     directory = Path(directory)
@@ -270,7 +281,9 @@ def align(
     logs_dir = directory / "align_logs"
     logs_dir.mkdir(exist_ok=True)
 
-    slurm = SlurmConfig(time=time, mem_gb=mem, partition=partition, job_name="align_detector")
+    slurm = SlurmConfig(
+        time=time, mem_gb=mem, partition=partition, job_name="align_detector"
+    )
     executor = submitit.AutoExecutor(folder=logs_dir)
     executor.update_parameters(**slurm.to_dict())
 
@@ -292,7 +305,9 @@ def align(
 @click.option("--time", default=360)
 @click.option("--mem", default=32)
 @click.option("--partition", default=None)
-def index(directory, list_file, geometry, cell, params, modules, n_jobs, time, mem, partition):
+def index(
+    directory, list_file, geometry, cell, params, modules, n_jobs, time, mem, partition
+):
     """Run production indexing."""
     params_dict = json.loads(Path(params).read_text())
     slurm = SlurmConfig(time=time, mem_gb=mem, partition=partition)
@@ -331,13 +346,27 @@ def merge_streams(directory, output):
 @click.option("--directory", "-d", required=True, type=click.Path())
 @click.option("--input-stream", "-i", required=True, type=click.Path(exists=True))
 @click.option("--true-symmetry", "-y", required=True, help="True point group symmetry")
+@click.option(
+    "--apparent-symmetry", "-w", required=True, help="Apparent lattice symmetry"
+)
 @click.option("--modules", "-m", multiple=True, default=["crystfel/0.12.0"])
 @click.option("--ncorr", default=1000)
 @click.option("--jobs", "-j", default=16)
 @click.option("--time", default=240)
 @click.option("--mem", default=32)
 @click.option("--partition", default=None)
-def ambigator(directory, input_stream, true_symmetry, modules, ncorr, jobs, time, mem, partition):
+def ambigator(
+    directory,
+    input_stream,
+    true_symmetry,
+    apparent_symmetry,
+    modules,
+    ncorr,
+    jobs,
+    time,
+    mem,
+    partition,
+):
     """
     Resolve indexing ambiguities.
 
@@ -350,6 +379,7 @@ def ambigator(directory, input_stream, true_symmetry, modules, ncorr, jobs, time
         directory=directory,
         input_stream=input_stream,
         true_symmetry=true_symmetry,
+        apparent_symmetry=apparent_symmetry,
         params={"ncorr": ncorr, "j": jobs},
         modules=list(modules),
         slurm=slurm,
@@ -450,7 +480,9 @@ def init(output):
     click.echo(f"Created {base_path} (base indexamajig params)")
     click.echo(f"Created {grid_path} (grid search params)")
     click.echo("\nUsage:")
-    click.echo(f"  crystflow grid-search --base-params {base_path} --grid-params {grid_path} ...")
+    click.echo(
+        f"  crystflow grid-search --base-params {base_path} --grid-params {grid_path} ..."
+    )
 
 
 @cli.command()

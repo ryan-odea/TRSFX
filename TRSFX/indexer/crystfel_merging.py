@@ -29,7 +29,8 @@ def _build_flags(params: Dict[str, Any]) -> List[str]:
 class AmbigatorConfig:
     input_stream: Path
     output_stream: Path
-    true_symmetry: str 
+    true_symmetry: str  # -y: true point group symmetry
+    apparent_symmetry: str  # -w: apparent lattice symmetry (determines operator)
     params: Dict[str, Any] = field(default_factory=dict)
 
     def to_cli(self, modules: List[str] | None = None) -> str:
@@ -42,6 +43,7 @@ class AmbigatorConfig:
             "ambigator",
             f"-o {self.output_stream}",
             f"-y {self.true_symmetry}",
+            f"-w {self.apparent_symmetry}",
         ]
         cmd.extend(_build_flags(self.params))
         cmd.append(str(self.input_stream))
@@ -94,6 +96,7 @@ class Ambigator:
         directory: Union[str, Path],
         input_stream: Union[str, Path],
         true_symmetry: str,
+        apparent_symmetry: str,
         params: Dict[str, Any] | None = None,
         modules: List[str] | None = None,
         slurm: SlurmConfig | None = None,
@@ -116,6 +119,7 @@ class Ambigator:
             input_stream=self.input_stream,
             output_stream=self.output_stream,
             true_symmetry=true_symmetry,
+            apparent_symmetry=apparent_symmetry,
             params=params or {},
         )
         self.config.to_cli(modules)
