@@ -7,15 +7,28 @@ import h5py
 
 
 def detect_n_frames(h5_path: Union[str, Path], dataset: str = "/data/data") -> int:
-    """Detect number of frames in an HDF5 file."""
+    """Detect number of frames in an HDF5 file by searching for the first valid dataset."""
     with h5py.File(h5_path, "r") as f:
-        if dataset in f:
+        if dataset in f and isinstance(f[dataset], h5py.Dataset):
             return f[dataset].shape[0]
-        for key in f.keys():
-            if "data" in f[key]:
-                return f[key]["data"].shape[0]
-    raise ValueError(f"Could not detect frames in {h5_path}")
 
+        def find_dataset(obj):
+            if isinstance(obj, h5py.Dataset):
+                if len(obj.shape) >= 2:
+                    return obj.shape[0]
+            elif isinstance(obj, h5py.Group):
+                for key in obj.keys():
+                    res = find_dataset(obj[key])
+                    if res is not None:
+                        return res
+            return None
+
+        n_frames = find_dataset(f)
+        if n_frames is not None:
+            return n_frames
+
+    raise ValueError(f"Could not find a valid image dataset in {h5_path}. "
+                     f"Keys found: {list(f.keys())}")
 
 def expand_event_list(
     source_list: Union[str, Path],

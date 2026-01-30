@@ -3,7 +3,6 @@ from pathlib import Path
 import click
 from natsort import natsorted
 
-from .._utils import read_h5
 from .hd5_corr import trace
 from .map_corr import COLUMN_PRESETS
 from .map_corr import corr_heatmap as heatmap_func
@@ -169,33 +168,33 @@ def map_cc(
             vmax=vmax,
         )
 
-
 @cli.command()
-@click.argument("input", type=click.Path(exists=True))
-@click.option("--start", type=int, help="Start index for the correlation trace")
-@click.option("--stop", type=int, help="Stop index for the correlation trace")
+@click.argument("input", type=str)
+@click.option("--start", type=int, default=0, help="Start index for the correlation trace")
+@click.option("--stop", type=int, default=None, help="Stop index for the correlation trace")
 @click.option(
     "--output",
     "-o",
     type=click.Path(exists=False),
-    help="Output filename for the trace plot",
+    required=True,
+    help="Output filename for the CSV",
 )
-def hd5_trace(input, start, stop, output):
+@click.option("--plot", "-p", is_flag=True, help="Save trace plots as <input>_trace.png")
+@click.option("--log-space/--linear", default=True, help="Use log10 transform for correlation")
+def hd5_trace(input, start, stop, output, plot, log_space):
     """
-    Calculates the scalar Pearson correlation coefficient for every consecutive pair of frames
-    and plots it as a time series - primarily for finding a crystal size as a number of frames.
-
-    :param frames: List of numpy arrays.
-    :type frames: list
-    :param start: Start frame index. Defaults to 0.
-    :type start: int, optional
-    :param stop: End frame index. Defaults to None.
-    :type stop: int, optional
-    :param filename: File path to save the output/plot. Defaults to None.
-    :type filename: str or Path, optional
+    Calculates frame-to-frame Pearson correlation coefficients for HDF5 files.
+    INPUT can be a single HDF5 file or a glob pattern (e.g., "data/*.h5").
+    Results are written to a CSV with columns: filename, index, corr_coef
     """
-    frames = read_h5(filename=input)
-    trace(frames, start, stop, True, filename=output)
+    trace(
+        pattern=input,
+        output_csv=output,
+        start_idx=start,
+        end_idx=stop,
+        log_space=log_space,
+        plot=plot,
+    )
 
 
 if __name__ == "__main__":

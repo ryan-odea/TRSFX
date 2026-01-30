@@ -53,32 +53,6 @@ class AmbigatorConfig:
         return self._cmd_str
 
 
-@dataclass
-class PartialatorConfig:
-    input_stream: Path
-    output_hkl: Path
-    symmetry: str
-    params: Dict[str, Any] = field(default_factory=dict)
-
-    def to_cli(self, modules: List[str] | None = None) -> str:
-        cmd_parts = []
-
-        if modules:
-            cmd_parts.append(" && ".join(f"module load {m}" for m in modules))
-
-        cmd = [
-            "partialator",
-            f"-i {self.input_stream}",
-            f"-o {self.output_hkl}",
-            f"-w {self.symmetry}",
-        ]
-        cmd.extend(_build_flags(self.params))
-
-        cmd_parts.append(" ".join(cmd))
-        self._cmd_str = " && ".join(cmd_parts)
-        return self._cmd_str
-
-
 class Ambigator:
     """
     Resolves indexing ambiguities when point group symmetry is lower than lattice symmetry.
@@ -152,6 +126,32 @@ class Ambigator:
         return self.output_stream
 
 
+@dataclass
+class PartialatorConfig:
+    input_stream: Path
+    output_hkl: Path
+    symmetry: str
+    params: Dict[str, Any] = field(default_factory=dict)
+
+    def to_cli(self, modules: List[str] | None = None) -> str:
+        cmd_parts = []
+
+        if modules:
+            cmd_parts.append(" && ".join(f"module load {m}" for m in modules))
+
+        cmd = [
+            "partialator",
+            f"-i {self.input_stream}",
+            f"-o {self.output_hkl}",
+            f"-y {self.symmetry}",
+        ]
+        
+        cmd.extend(_build_flags(self.params))
+
+        cmd_parts.append(" ".join(cmd))
+        self._cmd_str = " && ".join(cmd_parts)
+        return self._cmd_str
+
 class Partialator:
     """Merges and scales crystallographic reflections with partiality correction."""
 
@@ -215,8 +215,13 @@ class Partialator:
     @property
     def output_files(self) -> Dict[str, Path]:
         stem = self.output_hkl.stem
-        return {
+        files = {
             "hkl": self.output_hkl,
             "hkl1": self.directory / f"{stem}.hkl1",
             "hkl2": self.directory / f"{stem}.hkl2",
         }
+        
+        if self.config.params.get("unmerged-output") or self.config.params.get("unmerged_output"):
+            files["unmerged"] = self.directory / f"{stem}.unmerged"
+            
+        return files

@@ -393,12 +393,13 @@ def ambigator(
 @cli.command()
 @click.option("--directory", "-d", required=True, type=click.Path())
 @click.option("--input-stream", "-i", required=True, type=click.Path(exists=True))
-@click.option("--symmetry", "-w", required=True)
+@click.option("--symmetry", "-y", required=True)
 @click.option("--output-name", "-o", default="merged")
 @click.option("--modules", "-m", multiple=True, default=["crystfel/0.12.0"])
 @click.option("--model", default="xsphere")
 @click.option("--iterations", default=1)
 @click.option("--push-res", default=1.5)
+@click.option("--unmerged-output", is_flag=True, default=False, help="Output unmerged reflections (.unmerged)")
 @click.option("--jobs", "-j", default=32)
 @click.option("--time", default=1440)
 @click.option("--mem", default=128)
@@ -414,6 +415,7 @@ def partialator(
     model,
     iterations,
     push_res,
+    unmerged_output,
     jobs,
     time,
     mem,
@@ -427,6 +429,7 @@ def partialator(
         "iterations": iterations,
         "push_res": push_res,
         "j": jobs,
+        "unmerged-output": unmerged_output,
     }
     if custom_split:
         params["custom_split"] = custom_split
