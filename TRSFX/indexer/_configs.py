@@ -77,7 +77,10 @@ class GridSearchConfig:
             pass
 
         if errors:
-            raise ValueError("GridSearchConfig validation failed:\n" + "\n".join(f"  - {e}" for e in errors))
+            raise ValueError(
+                "GridSearchConfig validation failed:\n"
+                + "\n".join(f"  - {e}" for e in errors)
+            )
 
     @property
     def n_combinations(self) -> int:
