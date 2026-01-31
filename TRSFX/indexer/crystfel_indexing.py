@@ -1,16 +1,13 @@
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import submitit
 
 from ._configs import GridSearchConfig, IndexamajigConfig, SlurmConfig
 from ._utils import split_list
-
-if TYPE_CHECKING:
-    from .crystfel_detector import DetectorRefinement
-    from .crystfel_gridsearch import GridSearch
-
+from .crystfel_detector import DetectorRefinement
+from .crystfel_gridsearch import GridSearch
 
 class Indexamajig:
     """
@@ -65,6 +62,10 @@ class Indexamajig:
         self.jobs: List[submitit.Job] = []
         self.configs: List[IndexamajigConfig] = []
 
+        effective_params = dict(params)
+        if self.slurm.cores > 1 and "j" not in effective_params:
+            effective_params["j"] = self.slurm.cores
+
         chunks = split_list(list_file, self.lists_dir, n_jobs)
 
         for i, chunk in enumerate(chunks):
@@ -74,7 +75,7 @@ class Indexamajig:
                 input_list=chunk,
                 output_stream=stream,
                 cell_file=cell_file,
-                params=params,
+                params=effective_params,
             )
             config.to_cli(modules)
             self.configs.append(config)
@@ -89,6 +90,7 @@ class Indexamajig:
                 directives["slurm_job_name"] = f"idx_{i:04d}"
             executor.update_parameters(**directives)
 
+            # Wrap command for shell execution
             func = submitit.helpers.CommandFunction(["bash", "-c", config._cmd_str])
             job = executor.submit(func)
             self.jobs.append(job)

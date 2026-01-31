@@ -71,6 +71,9 @@ class DetectorRefinement:
             mille_params["max_mille_level"] = mille_level
             mille_params["check_peaks"] = True
 
+            if self.slurm.cores > 1 and "j" not in mille_params:
+                mille_params["j"] = self.slurm.cores
+
             config = IndexamajigConfig(
                 geometry=self.geometry,
                 input_list=chunk,
@@ -123,7 +126,7 @@ class DetectorRefinement:
 
         align_slurm = slurm or SlurmConfig(
             time=self.slurm.time,
-            mem_gb=max(self.slurm.mem_gb, 150),
+            mem_gb=max(self.slurm.mem_gb, 32),
             partition=self.slurm.partition,
             job_name="align_detector",
         )
