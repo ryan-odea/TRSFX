@@ -6,8 +6,8 @@ import submitit
 
 from ._configs import GridSearchConfig, IndexamajigConfig, SlurmConfig
 from ._utils import split_list
-from .crystfel_gridsearch import GridSearch
 from .crystfel_detector import DetectorRefinement
+from .crystfel_gridsearch import GridSearch
 
 
 class Indexamajig:
