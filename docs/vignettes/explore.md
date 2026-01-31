@@ -8,9 +8,9 @@ This provides information about the number of peaks detected in a stream file an
 sfx.explore peak-dist data.stream --output peak_distribution.png --bins 50
 ```
 
-## peak-time-series
-Sorts by file and frame number to form a time series of detected peaks. Output is a png file and should be saved as such.
+## consistent-crystals
+Finds consistently indexed crystals within a stream file, plots distribution of these consecutive crystals.
 
 ```bash
-sfx.explore peak-time-series data.stream --output peak_ts.png 
+sfx.explore consistent-crystals input.stream output.lst --plot dist.png
 ```
