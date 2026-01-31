@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import submitit
 
@@ -10,6 +10,7 @@ from ._utils import split_list
 if TYPE_CHECKING:
     from .crystfel_detector import DetectorRefinement
     from .crystfel_gridsearch import GridSearch
+
 
 class Indexamajig:
     """
