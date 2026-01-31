@@ -6,8 +6,8 @@ import submitit
 
 from ._configs import GridSearchConfig, IndexamajigConfig, SlurmConfig
 from ._utils import split_list
-from .crystfel_detector import DetectorRefinement
 from .crystfel_gridsearch import GridSearch
+from .crystfel_detector import DetectorRefinement
 
 
 class Indexamajig:
@@ -46,15 +46,22 @@ class Indexamajig:
         modules: List[str] | None = None,
         n_jobs: int = 100,
         slurm: SlurmConfig | None = None,
+        mille: bool = False,
+        mille_level: int = 2,
         verbose: bool = False,
     ):
         self.directory = Path(directory)
         self.lists_dir = self.directory / "lists"
         self.streams_dir = self.directory / "streams"
         self.logs_dir = self.directory / "logs"
+        self.mille_dir = self.directory / "mille" if mille else None
         self.verbose = verbose
 
-        for d in [self.lists_dir, self.streams_dir, self.logs_dir]:
+        dirs_to_create = [self.lists_dir, self.streams_dir, self.logs_dir]
+        if self.mille_dir:
+            dirs_to_create.append(self.mille_dir)
+
+        for d in dirs_to_create:
             d.mkdir(parents=True, exist_ok=True)
 
         self.params = params
@@ -70,13 +77,20 @@ class Indexamajig:
         chunks = split_list(list_file, self.lists_dir, n_jobs)
 
         for i, chunk in enumerate(chunks):
+            chunk_params = dict(effective_params)
+
+            if mille:
+                chunk_params["mille"] = True
+                chunk_params["mille_file"] = str(self.mille_dir / f"mille_{i:04d}.bin")
+                chunk_params["max_mille_level"] = mille_level
+
             stream = self.streams_dir / f"idx_{i:04d}.stream"
             config = IndexamajigConfig(
                 geometry=geometry,
                 input_list=chunk,
                 output_stream=stream,
                 cell_file=cell_file,
-                params=effective_params,
+                params=chunk_params,
             )
             config.to_cli(modules)
             self.configs.append(config)
@@ -91,7 +105,6 @@ class Indexamajig:
                 directives["slurm_job_name"] = f"idx_{i:04d}"
             executor.update_parameters(**directives)
 
-            # Wrap command for shell execution
             func = submitit.helpers.CommandFunction(["bash", "-c", config._cmd_str])
             job = executor.submit(func)
             self.jobs.append(job)
@@ -164,7 +177,6 @@ class Indexamajig:
         GridSearch
             Configured grid search ready for submission
         """
-
         config = GridSearchConfig(
             base_params=base_params,
             grid_params=grid_params,
