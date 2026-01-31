@@ -17,7 +17,9 @@ pip install TRSFX
 While many of the functions can also be accessed through the python API, the majortiy of users might benefit from interacting with the CLI counterparts. Most of the functions are 'bundled' into submodules as to not overwhelm the user immediately. The current bundles are:
 
 1. `sfx.compare` - Tools to form comparisons between HKL and MTZ files
-2. `sfx.manip` - Tools to manipulate MTZ files
+2. `sfx.manip` - Tools to manipulate different crystallographic files
+3. `sfx.explore` - Select tools to preform exploratory data analysis
+4. `sfx.index` - Indexing pipeline as a thin wrapper of Crystfel
 
 Calling any of these in the command line will bring up the helpfile and showcase functions available within them.
 
