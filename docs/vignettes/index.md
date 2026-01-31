@@ -78,4 +78,3 @@ sfx.index expand -i sample.lst -o events.lst
 ```bash
 sfx.index partialator -d indexing/ -i indexing/ambigator.stream -y "6/mmm" --unmerged-output unmerged.ifc --custom-split events.lst --time 240 --mem 250 --partition day -o frame
 ```
-

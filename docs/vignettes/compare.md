@@ -8,3 +8,10 @@ Similarly in 'like' filetypes, you should expect that the file structure is also
 ```bash
 sfx.compare map-cc -g "data/*.mtz" -p heatmap.png
 ```
+
+## hd5_trace
+This function calculates frame to frame correlation coefficients for h5 files. You can provide a single h5 file or glob pattern. Results are written to csv. Plot option will provide a trace plot saved to the same name as the input file (with a .png extension)
+
+```bash
+sfx.compare hd5-trace file.h5 --start 0 --stop 45 -i corr.csv --plot
+```
