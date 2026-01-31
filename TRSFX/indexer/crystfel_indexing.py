@@ -1,12 +1,15 @@
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 
 import submitit
 
 from ._configs import GridSearchConfig, IndexamajigConfig, SlurmConfig
 from ._utils import split_list
 
+if TYPE_CHECKING:
+    from .crystfel_detector import DetectorRefinement
+    from .crystfel_gridsearch import GridSearch
 
 class Indexamajig:
     """
@@ -157,7 +160,6 @@ class Indexamajig:
         GridSearch
             Configured grid search ready for submission
         """
-        from .crystfel_grid_search import GridSearch
 
         config = GridSearchConfig(
             base_params=base_params,

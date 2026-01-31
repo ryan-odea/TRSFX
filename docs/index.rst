@@ -19,6 +19,7 @@ documentation for details.
    TRSFX/compare
    TRSFX/explore
    TRSFX/manipulation
+   TRSFX/index
 
 .. toctree::
    :maxdepth: 2
@@ -29,6 +30,7 @@ documentation for details.
    vignettes/compare
    vignettes/explore
    vignettes/manip
+   vignettes/index
 
 .. include:: ../README.md
    :parser: myst_parser.sphinx_

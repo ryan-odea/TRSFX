@@ -1,4 +1,4 @@
-File Manipulation (MTZ/HKL)
-===========================
+File Manipulation
+=================
 .. automodule:: TRSFX.manipulation
     :members:
