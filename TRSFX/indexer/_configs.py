@@ -7,8 +7,9 @@ from typing import Any, Dict, List, Optional, Union
 class SlurmConfig:
     """Configuration for SLURM job submission."""
 
-    time: int = 360  # minutes
+    time: int = 60  # minutes
     mem_gb: int = 8
+    cores: int = 1
     partition: Optional[str] = None
     job_name: Optional[str] = None
     extra: Dict[str, Any] = field(default_factory=dict)
@@ -18,6 +19,7 @@ class SlurmConfig:
         directives = {
             "slurm_time": self.time,
             "mem_gb": self.mem_gb,
+            "cpus_per_task": self.cores,
         }
         if self.partition:
             directives["slurm_partition"] = self.partition
@@ -29,7 +31,7 @@ class SlurmConfig:
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "SlurmConfig":
         """Create from a dictionary, extracting known keys."""
-        known = {"time", "mem_gb", "partition", "job_name"}
+        known = {"time", "mem_gb", "cores", "partition", "job_name"}
         kwargs = {k: v for k, v in d.items() if k in known}
         extra = {k: v for k, v in d.items() if k not in known}
         return cls(**kwargs, extra=extra)
@@ -62,7 +64,6 @@ class GridSearchConfig:
         if not self.grid_params:
             errors.append("grid_params cannot be empty")
 
-        # Check grid_params structure
         for key, values in self.grid_params.items():
             if not isinstance(values, list):
                 errors.append(
@@ -71,17 +72,12 @@ class GridSearchConfig:
             elif len(values) == 0:
                 errors.append(f"grid_params['{key}'] cannot be empty")
 
-        # Warn about overlapping keys (grid overrides base)
         overlap = set(self.base_params.keys()) & set(self.grid_params.keys())
         if overlap:
-            # This is allowed but worth noting - grid params override base
             pass
 
         if errors:
-            raise ValueError(
-                "GridSearchConfig validation failed:\n"
-                + "\n".join(f"  - {e}" for e in errors)
-            )
+            raise ValueError("GridSearchConfig validation failed:\n" + "\n".join(f"  - {e}" for e in errors))
 
     @property
     def n_combinations(self) -> int:

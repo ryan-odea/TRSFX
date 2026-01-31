@@ -22,13 +22,17 @@ def cli():
 @cli.command()
 @click.option("--file-list", "-i", required=True, type=click.Path(exists=True))
 @click.option("--output", "-o", required=True, type=click.Path())
-@click.option("--pattern", default="//")
-def expand(file_list, output, pattern):
-    """Expand file list to event list."""
+@click.option("--entry-prefix", default="//", help="Entry prefix (default: //)")
+@click.option("--n-frames", type=int, default=None, help="Number of frames (auto-detect if not set)")
+@click.option("--start-index", default=0, help="Starting frame index")
+def expand(file_list, output, entry_prefix, n_frames, start_index):
+    """Expand file list to event list (3 columns: file //N N)."""
     expand_event_list(
         source_list=file_list,
         output_list=output,
-        event_pattern=pattern,
+        entry_prefix=entry_prefix,
+        n_frames=n_frames,
+        start_index=start_index,
     )
     click.echo(f"Expanded to {output}")
 
@@ -43,6 +47,7 @@ def expand(file_list, output, pattern):
 @click.option("--n-jobs", default=4, help="Jobs per parameter combination")
 @click.option("--time", default=60, help="Minutes per job")
 @click.option("--mem", default=8, help="Memory in GB")
+@click.option("--cores", default=1, help="CPU cores per job")
 @click.option("--partition", default=None, help="SLURM partition")
 @click.option(
     "--base-params",
@@ -66,6 +71,7 @@ def grid_search(
     n_jobs,
     time,
     mem,
+    cores,
     partition,
     base_params,
     grid_params,
@@ -92,9 +98,7 @@ def grid_search(
         raise click.ClickException(f"Input list file is empty: {list_file}")
 
     if n_subsample > n_events:
-        click.echo(
-            f"Warning: --n-subsample ({n_subsample}) > events in file ({n_events}), using all events"
-        )
+        click.echo(f"Warning: --n-subsample ({n_subsample}) > events in file ({n_events}), using all events")
         n_subsample = n_events
 
     invalid_keys = [k for k, v in grid.items() if not isinstance(v, list)]
@@ -120,7 +124,7 @@ def grid_search(
     except ValueError as e:
         raise click.ClickException(str(e))
 
-    slurm = SlurmConfig(time=time, mem_gb=mem, partition=partition)
+    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition)
 
     try:
         gs = GridSearch(
@@ -197,6 +201,7 @@ def grid_analyze(directory, output):
 @click.option("--level", default=2, help="Millepede hierarchy level")
 @click.option("--time", default=60)
 @click.option("--mem", default=16)
+@click.option("--cores", default=1, help="CPU cores per job")
 @click.option("--partition", default=None)
 @click.option("--camera-length/--no-camera-length", default=True)
 @click.option("--out-of-plane/--no-out-of-plane", default=False)
@@ -211,13 +216,14 @@ def refine(
     level,
     time,
     mem,
+    cores,
     partition,
     camera_length,
     out_of_plane,
 ):
     """Generate Millepede calibration data for detector refinement."""
     params_dict = json.loads(Path(params).read_text())
-    slurm = SlurmConfig(time=time, mem_gb=mem, partition=partition)
+    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition)
 
     ref = Indexamajig.refine_detector(
         directory=directory,
@@ -245,20 +251,12 @@ def refine(
 @click.option("--level", default=2)
 @click.option("--time", default=30)
 @click.option("--mem", default=64)
+@click.option("--cores", default=1, help="CPU cores per job")
 @click.option("--partition", default=None)
 @click.option("--camera-length/--no-camera-length", default=True)
 @click.option("--out-of-plane/--no-out-of-plane", default=False)
 def align(
-    directory,
-    geometry,
-    output,
-    modules,
-    level,
-    time,
-    mem,
-    partition,
-    camera_length,
-    out_of_plane,
+    directory, geometry, output, modules, level, time, mem, cores, partition, camera_length, out_of_plane
 ):
     """Run detector alignment on existing mille data."""
     directory = Path(directory)
@@ -281,9 +279,7 @@ def align(
     logs_dir = directory / "align_logs"
     logs_dir.mkdir(exist_ok=True)
 
-    slurm = SlurmConfig(
-        time=time, mem_gb=mem, partition=partition, job_name="align_detector"
-    )
+    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition, job_name="align_detector")
     executor = submitit.AutoExecutor(folder=logs_dir)
     executor.update_parameters(**slurm.to_dict())
 
@@ -304,13 +300,12 @@ def align(
 @click.option("--n-jobs", default=100)
 @click.option("--time", default=360)
 @click.option("--mem", default=32)
+@click.option("--cores", default=1, help="CPU cores per job")
 @click.option("--partition", default=None)
-def index(
-    directory, list_file, geometry, cell, params, modules, n_jobs, time, mem, partition
-):
+def index(directory, list_file, geometry, cell, params, modules, n_jobs, time, mem, cores, partition):
     """Run production indexing."""
     params_dict = json.loads(Path(params).read_text())
-    slurm = SlurmConfig(time=time, mem_gb=mem, partition=partition)
+    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition)
 
     idx = Indexamajig(
         directory=directory,
@@ -346,41 +341,34 @@ def merge_streams(directory, output):
 @click.option("--directory", "-d", required=True, type=click.Path())
 @click.option("--input-stream", "-i", required=True, type=click.Path(exists=True))
 @click.option("--true-symmetry", "-y", required=True, help="True point group symmetry")
-@click.option(
-    "--apparent-symmetry", "-w", required=True, help="Apparent lattice symmetry"
-)
+@click.option("--apparent-symmetry", "-w", required=True, help="Apparent lattice symmetry")
 @click.option("--modules", "-m", multiple=True, default=["crystfel/0.12.0"])
 @click.option("--ncorr", default=1000)
 @click.option("--jobs", "-j", default=16)
+@click.option("--unmerged-output", type=click.Path(), help="Write unmerged reflection list to file")
 @click.option("--time", default=240)
 @click.option("--mem", default=32)
+@click.option("--cores", default=1, help="CPU cores per job")
 @click.option("--partition", default=None)
-def ambigator(
-    directory,
-    input_stream,
-    true_symmetry,
-    apparent_symmetry,
-    modules,
-    ncorr,
-    jobs,
-    time,
-    mem,
-    partition,
-):
+def ambigator(directory, input_stream, true_symmetry, apparent_symmetry, modules, ncorr, jobs, unmerged_output, time, mem, cores, partition):
     """
     Resolve indexing ambiguities.
 
     Requires both true symmetry (-y) and apparent symmetry (-w) to determine
     the ambiguity operator.
     """
-    slurm = SlurmConfig(time=time, mem_gb=mem, partition=partition)
+    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition)
+
+    params = {"ncorr": ncorr, "j": jobs}
+    if unmerged_output:
+        params["unmerged_output"] = unmerged_output
 
     ambig = Ambigator(
         directory=directory,
         input_stream=input_stream,
         true_symmetry=true_symmetry,
         apparent_symmetry=apparent_symmetry,
-        params={"ncorr": ncorr, "j": jobs},
+        params=params,
         modules=list(modules),
         slurm=slurm,
     )
@@ -393,19 +381,16 @@ def ambigator(
 @cli.command()
 @click.option("--directory", "-d", required=True, type=click.Path())
 @click.option("--input-stream", "-i", required=True, type=click.Path(exists=True))
-@click.option("--symmetry", "-y", required=True)
+@click.option("--symmetry", "-w", required=True)
 @click.option("--output-name", "-o", default="merged")
 @click.option("--modules", "-m", multiple=True, default=["crystfel/0.12.0"])
 @click.option("--model", default="xsphere")
 @click.option("--iterations", default=1)
 @click.option("--push-res", default=1.5)
-@click.option(
-    "--unmerged-output",
-    help="Output unmerged reflections (.unmerged)",
-)
 @click.option("--jobs", "-j", default=32)
 @click.option("--time", default=1440)
 @click.option("--mem", default=128)
+@click.option("--cores", default=1, help="CPU cores per job")
 @click.option("--partition", default=None)
 @click.option("--custom-split", type=click.Path(exists=True))
 @click.option("--no-logs/--logs", default=True)
@@ -418,10 +403,10 @@ def partialator(
     model,
     iterations,
     push_res,
-    unmerged_output,
     jobs,
     time,
     mem,
+    cores,
     partition,
     custom_split,
     no_logs,
@@ -432,14 +417,13 @@ def partialator(
         "iterations": iterations,
         "push_res": push_res,
         "j": jobs,
-        "unmerged-output": unmerged_output,
     }
     if custom_split:
         params["custom_split"] = custom_split
     if no_logs:
         params["no_logs"] = True
 
-    slurm = SlurmConfig(time=time, mem_gb=mem, partition=partition)
+    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition)
 
     partial = Partialator(
         directory=directory,
@@ -485,11 +469,6 @@ def init(output):
 
     click.echo(f"Created {base_path} (base indexamajig params)")
     click.echo(f"Created {grid_path} (grid search params)")
-    click.echo("\nUsage:")
-    click.echo(
-        f"  crystflow grid-search --base-params {base_path} --grid-params {grid_path} ..."
-    )
-
 
 @cli.command()
 @click.option("--directory", "-d", required=True, type=click.Path(exists=True))
