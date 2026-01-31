@@ -64,6 +64,7 @@ class GridSearchConfig:
         if not self.grid_params:
             errors.append("grid_params cannot be empty")
 
+        # Check grid_params structure
         for key, values in self.grid_params.items():
             if not isinstance(values, list):
                 errors.append(
@@ -72,8 +73,10 @@ class GridSearchConfig:
             elif len(values) == 0:
                 errors.append(f"grid_params['{key}'] cannot be empty")
 
+        # Warn about overlapping keys (grid overrides base)
         overlap = set(self.base_params.keys()) & set(self.grid_params.keys())
         if overlap:
+            # This is allowed but worth noting - grid params override base
             pass
 
         if errors:
@@ -145,6 +148,10 @@ class IndexamajigConfig:
             idx_cmd.append(f"-p {self.cell_file}")
 
         for k, v in self.params.items():
+            if k == "j":
+                idx_cmd.append(f"-j {v}")
+                continue
+
             flag = k.replace("_", "-")
             if v is True:
                 idx_cmd.append(f"--{flag}")
