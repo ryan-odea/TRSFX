@@ -9,6 +9,7 @@ from ._utils import split_list
 from .crystfel_detector import DetectorRefinement
 from .crystfel_gridsearch import GridSearch
 
+
 class Indexamajig:
     """
     Manages parallel indexamajig execution over chunked input lists.
