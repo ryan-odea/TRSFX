@@ -1,4 +1,5 @@
 import csv
+import itertools
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -6,7 +7,7 @@ from typing import Any, Dict, List, Optional, Union
 import submitit
 
 from ._configs import GridSearchConfig, SlurmConfig
-from ._utils import subsample_list
+from ._utils import generate_clen_geometries, subsample_list
 
 
 class GridSearch:
@@ -16,11 +17,17 @@ class GridSearch:
     Subsamples the input list and runs indexamajig with every combination
     of parameters specified in the grid configuration.
 
+    Special handling for 'clen' parameter: instead of passing as a CLI flag,
+    generates modified geometry files for each clen value.
+
     Example
     -------
     >>> config = GridSearchConfig(
     ...     base_params={"indexing": "xgandalf", "peaks": "peakfinder8"},
-    ...     grid_params={"threshold": [6, 8, 10], "min_snr": [4.0, 5.0]},
+    ...     grid_params={
+    ...         "threshold": [6, 8, 10],
+    ...         "clen": [0.120, 0.125, 0.130],  # Special: modifies geometry
+    ...     },
     ...     n_subsample=1000,
     ... )
     >>> gs = GridSearch(
@@ -56,13 +63,47 @@ class GridSearch:
         self._results: Optional[List[Dict[str, Any]]] = None
 
         subsample_path = self.directory / "subsample.lst"
-        subsample_list(list_file, subsample_path, config.n_subsample)
+        try:
+            subsample_list(list_file, subsample_path, config.n_subsample)
+        except ValueError as e:
+            raise ValueError(
+                f"Cannot create grid search: {e}\n"
+                f"Check that your input list file contains events."
+            ) from e
 
-        for i, run_params in enumerate(config.iter_combinations()):
+        n_subsampled = sum(
+            1 for ln in subsample_path.read_text().splitlines() if ln.strip()
+        )
+        if n_subsampled == 0:
+            raise ValueError(
+                f"Subsampled list is empty. Input file may have no valid events: {list_file}"
+            )
+
+        if self.verbose:
+            print(f"Subsampled {n_subsampled} events for grid search")
+
+        clen_values = config.grid_params.get("clen")
+        clen_geometries = {}
+        if clen_values:
+            geom_dir = self.directory / "geometries"
+            clen_geometries = generate_clen_geometries(geometry, geom_dir, clen_values)
+            if self.verbose:
+                print(f"Generated {len(clen_geometries)} geometry files for clen scan")
+
+        run_idx = 0
+        for combo_params in self._iter_combinations_with_clen(config, clen_values):
+            run_clen = combo_params.pop("clen", None)
+            run_params = {**config.base_params, **combo_params}
+
+            if run_clen is not None:
+                run_geometry = clen_geometries[run_clen]
+            else:
+                run_geometry = geometry
+
             run = Indexamajig(
-                directory=self.directory / f"run_{i:03d}",
+                directory=self.directory / f"run_{run_idx:03d}",
                 list_file=subsample_path,
-                geometry=geometry,
+                geometry=run_geometry,
                 params=run_params,
                 cell_file=cell_file,
                 modules=modules,
@@ -70,7 +111,38 @@ class GridSearch:
                 slurm=self.slurm,
                 verbose=verbose,
             )
+            if run_clen is not None:
+                run._grid_params = {**combo_params, "clen": run_clen}
+            else:
+                run._grid_params = combo_params
+
             self.runs.append(run)
+            run_idx += 1
+
+    def _iter_combinations_with_clen(
+        self, config: GridSearchConfig, clen_values: List[float] | None
+    ):
+        """Iterate over all parameter combinations including clen."""
+        grid_params_no_clen = {
+            k: v for k, v in config.grid_params.items() if k != "clen"
+        }
+
+        if not grid_params_no_clen and not clen_values:
+            yield {}
+            return
+
+        if grid_params_no_clen:
+            keys = list(grid_params_no_clen.keys())
+            for values in itertools.product(*grid_params_no_clen.values()):
+                base_combo = dict(zip(keys, values))
+                if clen_values:
+                    for clen in clen_values:
+                        yield {**base_combo, "clen": clen}
+                else:
+                    yield base_combo
+        else:
+            for clen in clen_values:
+                yield {"clen": clen}
 
     @property
     def n_runs(self) -> int:
@@ -107,6 +179,8 @@ class GridSearch:
         for i, run in enumerate(self.runs):
             run_result = run.results
             run_result["run_id"] = f"run_{i:03d}"
+            if hasattr(run, "_grid_params"):
+                run_result["grid_params"] = run._grid_params
             results.append(run_result)
 
         results.sort(key=lambda x: x["indexing_rate"], reverse=True)
@@ -117,10 +191,11 @@ class GridSearch:
 
     @property
     def best_params(self) -> Dict[str, Any]:
-        """Parameters from the best-performing run."""
+        """Parameters from the best-performing run (grid params only, including clen if scanned)."""
         if not self.results:
             return {}
-        return self.results[0]["params"]
+        result = self.results[0]
+        return result.get("grid_params", result.get("params", {}))
 
     @property
     def best_run(self) -> Optional[Dict[str, Any]]:
@@ -160,14 +235,17 @@ class GridSearch:
         return "\n".join(lines)
 
     def _save_manifest(self) -> None:
-        manifest = [
-            {
+        manifest = []
+        for i, run in enumerate(self.runs):
+            entry = {
                 "run_id": f"run_{i:03d}",
                 "directory": str(run.directory),
                 "params": run.params,
             }
-            for i, run in enumerate(self.runs)
-        ]
+            if hasattr(run, "_grid_params"):
+                entry["grid_params"] = run._grid_params
+            manifest.append(entry)
+
         with open(self.directory / "manifest.json", "w") as f:
             json.dump(manifest, f, indent=2)
 
@@ -177,7 +255,9 @@ class GridSearch:
 
         flat = []
         for r in results:
-            row = {k: v for k, v in r.items() if k != "params"}
+            row = {k: v for k, v in r.items() if k not in ("params", "grid_params")}
+            if "grid_params" in r:
+                row.update(r["grid_params"])
             row.update(r["params"])
             flat.append(row)
 
@@ -202,14 +282,11 @@ class GridSearch:
             raise FileNotFoundError(f"No manifest.json found in {directory}")
 
         manifest = json.loads(manifest_path.read_text())
-
-        # Create a minimal instance for result analysis
         instance = object.__new__(cls)
         instance.directory = directory
         instance.verbose = False
         instance._results = None
 
-        # Reconstruct run objects (minimal, for log parsing)
         instance.runs = []
         for entry in manifest:
             run = object.__new__(Indexamajig)
