@@ -6,12 +6,8 @@ import click
 import submitit
 
 from ._configs import AlignDetectorConfig, GridSearchConfig, SlurmConfig
-from ._utils import (
-    concat_streams,
-    edit_geometry_clen,
-    expand_event_list,
-    read_geometry_clen,
-)
+from ._utils import (concat_streams, edit_geometry_clen, expand_event_list,
+                     read_geometry_clen)
 from .crystfel_gridsearch import GridSearch
 from .crystfel_indexing import Indexamajig
 from .crystfel_merging import Ambigator, Partialator
