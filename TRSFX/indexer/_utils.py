@@ -1,47 +1,139 @@
 import random
+import re
 import shutil
 from pathlib import Path
 from typing import Dict, List, Union
 
-import h5py
-
 
 def detect_n_frames(h5_path: Union[str, Path], dataset: str = "/data/data") -> int:
-    """Detect number of frames in an HDF5 file by searching for the first valid dataset."""
+    """Detect number of frames in an HDF5 file."""
+    import h5py
+
     with h5py.File(h5_path, "r") as f:
-        if dataset in f and isinstance(f[dataset], h5py.Dataset):
+        if dataset in f:
             return f[dataset].shape[0]
+        for key in f.keys():
+            if "data" in f[key]:
+                return f[key]["data"].shape[0]
+    raise ValueError(f"Could not detect frames in {h5_path}")
 
-        def find_dataset(obj):
-            if isinstance(obj, h5py.Dataset):
-                if len(obj.shape) >= 2:
-                    return obj.shape[0]
-            elif isinstance(obj, h5py.Group):
-                for key in obj.keys():
-                    res = find_dataset(obj[key])
-                    if res is not None:
-                        return res
-            return None
 
-        n_frames = find_dataset(f)
-        if n_frames is not None:
-            return n_frames
+def read_geometry_clen(geom_path: Union[str, Path]) -> float:
+    """
+    Read the camera length from a geometry file.
 
-    raise ValueError(
-        f"Could not find a valid image dataset in {h5_path}. "
-        f"Keys found: {list(f.keys())}"
+    Looks for panel-specific clen (e.g., p0/clen) or global clen.
+    Returns the first clen value found.
+    """
+    geom_path = Path(geom_path)
+    content = geom_path.read_text()
+
+    match = re.search(r"^\s*\w+/clen\s*=\s*([\d.eE+-]+)", content, re.MULTILINE)
+    if match:
+        return float(match.group(1))
+
+    match = re.search(r"^\s*clen\s*=\s*([\d.eE+-]+)", content, re.MULTILINE)
+    if match:
+        return float(match.group(1))
+
+    raise ValueError(f"No clen found in {geom_path}")
+
+
+def edit_geometry_clen(
+    geom_path: Union[str, Path],
+    output_path: Union[str, Path],
+    new_clen: float,
+) -> Path:
+    """
+    Create a copy of a geometry file with modified camera length.
+
+    Replaces all clen values (both panel-specific and global) with the new value.
+
+    Parameters
+    ----------
+    geom_path : path
+        Input geometry file
+    output_path : path
+        Output geometry file (can be same as input to modify in place)
+    new_clen : float
+        New camera length in meters
+
+    Returns
+    -------
+    Path
+        Path to the output geometry file
+    """
+    geom_path = Path(geom_path)
+    output_path = Path(output_path)
+
+    content = geom_path.read_text()
+
+    content = re.sub(
+        r"^(\s*\w+/clen\s*=\s*)[\d.eE+-]+",
+        rf"\g<1>{new_clen}",
+        content,
+        flags=re.MULTILINE,
     )
+    content = re.sub(
+        r"^(\s*clen\s*=\s*)[\d.eE+-]+",
+        rf"\g<1>{new_clen}",
+        content,
+        flags=re.MULTILINE,
+    )
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(content)
+
+    return output_path
+
+
+def generate_clen_geometries(
+    geom_path: Union[str, Path],
+    output_dir: Union[str, Path],
+    clen_values: List[float],
+) -> Dict[float, Path]:
+    """
+    Generate multiple geometry files with different camera lengths.
+
+    Parameters
+    ----------
+    geom_path : path
+        Template geometry file
+    output_dir : path
+        Directory for output geometry files
+    clen_values : list of float
+        Camera length values to generate
+
+    Returns
+    -------
+    dict
+        Mapping of clen value to geometry file path
+    """
+    geom_path = Path(geom_path)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    geometries = {}
+    for clen in clen_values:
+        output_path = output_dir / f"clen_{clen:.6f}.geom"
+        edit_geometry_clen(geom_path, output_path, clen)
+        geometries[clen] = output_path
+
+    return geometries
 
 
 def expand_event_list(
     source_list: Union[str, Path],
     output_list: Union[str, Path],
     n_frames: int | None = None,
-    event_pattern: str = "//",
+    entry_prefix: str = "//",
     start_index: int = 0,
 ) -> Path:
     """
     Expand a file list into an event list for CrystFEL.
+
+    Output format: file entry frame_number
+    Example: /path/file.h5 //1 1
 
     If n_frames is None, detects automatically from the first HDF5 file.
     """
@@ -65,7 +157,7 @@ def expand_event_list(
     with open(output_list, "w") as f:
         for filepath in files:
             for i in range(start_index, start_index + n_frames):
-                f.write(f"{filepath} {event_pattern}{i} {i}\n")
+                f.write(f"{filepath} {entry_prefix}{i} {i}\n")
 
     return output_list
 
@@ -79,16 +171,32 @@ def split_list(
     Split an event list into n_chunks roughly equal parts.
 
     Returns list of paths to chunk files.
+
+    Raises
+    ------
+    FileNotFoundError
+        If source_list doesn't exist
+    ValueError
+        If source_list is empty or n_chunks < 1
     """
     source_list = Path(source_list)
     output_dir = Path(output_dir)
+
+    if not source_list.exists():
+        raise FileNotFoundError(f"List file not found: {source_list}")
+
+    if n_chunks < 1:
+        raise ValueError(f"n_chunks must be >= 1, got {n_chunks}")
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
     lines = [ln for ln in source_list.read_text().splitlines() if ln.strip()]
     n_lines = len(lines)
 
-    if n_chunks > n_lines:
-        n_chunks = n_lines
+    if n_lines == 0:
+        raise ValueError(f"List file is empty: {source_list}")
+
+    n_chunks = min(n_chunks, n_lines)
 
     chunk_size = n_lines // n_chunks
     remainder = n_lines % n_chunks
@@ -97,7 +205,6 @@ def split_list(
     start = 0
 
     for i in range(n_chunks):
-        # Distribute remainder across first chunks
         end = start + chunk_size + (1 if i < remainder else 0)
         chunk_lines = lines[start:end]
         start = end
@@ -122,11 +229,27 @@ def subsample_list(
     Randomly subsample events from a list file.
 
     If n_samples exceeds the number of events, returns all events.
+
+    Raises
+    ------
+    FileNotFoundError
+        If source_list doesn't exist
+    ValueError
+        If source_list is empty or n_samples < 1
     """
     source_list = Path(source_list)
     output_list = Path(output_list)
 
+    if not source_list.exists():
+        raise FileNotFoundError(f"List file not found: {source_list}")
+
+    if n_samples < 1:
+        raise ValueError(f"n_samples must be >= 1, got {n_samples}")
+
     lines = [ln for ln in source_list.read_text().splitlines() if ln.strip()]
+
+    if len(lines) == 0:
+        raise ValueError(f"List file is empty: {source_list}")
 
     if n_samples >= len(lines):
         sampled = lines

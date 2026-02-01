@@ -6,7 +6,7 @@ import click
 import submitit
 
 from ._configs import AlignDetectorConfig, GridSearchConfig, SlurmConfig
-from ._utils import concat_streams, expand_event_list
+from ._utils import concat_streams, edit_geometry_clen, expand_event_list, read_geometry_clen
 from .crystfel_gridsearch import GridSearch
 from .crystfel_indexing import Indexamajig
 from .crystfel_merging import Ambigator, Partialator
@@ -76,6 +76,24 @@ def expand(file_list, output, entry_prefix, n_frames, start_index):
         start_index=start_index,
     )
     click.echo(f"Expanded to {output}")
+
+
+@cli.command()
+@click.option("--geometry", "-g", required=True, type=click.Path(exists=True))
+@click.option("--output", "-o", required=True, type=click.Path())
+@click.option("--clen", required=True, type=float, help="New camera length in meters")
+def edit_clen(geometry, output, clen):
+    """Edit camera length in a geometry file."""
+    edit_geometry_clen(geometry, output, clen)
+    click.echo(f"Created {output} with clen={clen}")
+
+
+@cli.command()
+@click.option("--geometry", "-g", required=True, type=click.Path(exists=True))
+def show_clen(geometry):
+    """Show current camera length from a geometry file."""
+    clen = read_geometry_clen(geometry)
+    click.echo(f"clen = {clen}")
 
 
 @cli.command()
@@ -517,10 +535,8 @@ def merge(
             result = ambig.job.result()
             click.echo("Ambigator complete")
 
-        # Use ambigator output for partialator
         input_stream = ambig.output_stream
 
-    # Step 2: Partialator
     params = {
         "model": model,
         "iterations": iterations,
