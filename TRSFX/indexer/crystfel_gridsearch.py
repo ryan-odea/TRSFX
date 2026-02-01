@@ -71,7 +71,9 @@ class GridSearch:
                 f"Check that your input list file contains events."
             ) from e
 
-        n_subsampled = sum(1 for ln in subsample_path.read_text().splitlines() if ln.strip())
+        n_subsampled = sum(
+            1 for ln in subsample_path.read_text().splitlines() if ln.strip()
+        )
         if n_subsampled == 0:
             raise ValueError(
                 f"Subsampled list is empty. Input file may have no valid events: {list_file}"
@@ -87,8 +89,6 @@ class GridSearch:
             clen_geometries = generate_clen_geometries(geometry, geom_dir, clen_values)
             if self.verbose:
                 print(f"Generated {len(clen_geometries)} geometry files for clen scan")
-
-        grid_params_no_clen = {k: v for k, v in config.grid_params.items() if k != "clen"}
 
         run_idx = 0
         for combo_params in self._iter_combinations_with_clen(config, clen_values):
@@ -119,9 +119,13 @@ class GridSearch:
             self.runs.append(run)
             run_idx += 1
 
-    def _iter_combinations_with_clen(self, config: GridSearchConfig, clen_values: List[float] | None):
+    def _iter_combinations_with_clen(
+        self, config: GridSearchConfig, clen_values: List[float] | None
+    ):
         """Iterate over all parameter combinations including clen."""
-        grid_params_no_clen = {k: v for k, v in config.grid_params.items() if k != "clen"}
+        grid_params_no_clen = {
+            k: v for k, v in config.grid_params.items() if k != "clen"
+        }
 
         if not grid_params_no_clen and not clen_values:
             yield {}
@@ -159,7 +163,9 @@ class GridSearch:
         self._save_manifest()
 
         if self.verbose:
-            print(f"Submitted {len(all_jobs)} jobs across {self.n_runs} parameter combinations")
+            print(
+                f"Submitted {len(all_jobs)} jobs across {self.n_runs} parameter combinations"
+            )
 
         return all_jobs
 
@@ -217,10 +223,12 @@ class GridSearch:
                 f"{r['hit_rate']:.2f}% hits"
             )
 
-        lines.extend([
-            "",
-            "Best parameters:",
-        ])
+        lines.extend(
+            [
+                "",
+                "Best parameters:",
+            ]
+        )
         for k, v in self.best_params.items():
             lines.append(f"  {k}: {v}")
 

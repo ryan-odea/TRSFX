@@ -6,7 +6,12 @@ import click
 import submitit
 
 from ._configs import AlignDetectorConfig, GridSearchConfig, SlurmConfig
-from ._utils import concat_streams, edit_geometry_clen, expand_event_list, read_geometry_clen
+from ._utils import (
+    concat_streams,
+    edit_geometry_clen,
+    expand_event_list,
+    read_geometry_clen,
+)
 from .crystfel_gridsearch import GridSearch
 from .crystfel_indexing import Indexamajig
 from .crystfel_merging import Ambigator, Partialator
@@ -64,7 +69,12 @@ def cli():
 @click.option("--file-list", "-i", required=True, type=click.Path(exists=True))
 @click.option("--output", "-o", required=True, type=click.Path())
 @click.option("--entry-prefix", default="//", help="Entry prefix (default: //)")
-@click.option("--n-frames", type=int, default=None, help="Number of frames (auto-detect if not set)")
+@click.option(
+    "--n-frames",
+    type=int,
+    default=None,
+    help="Number of frames (auto-detect if not set)",
+)
 @click.option("--start-index", default=0, help="Starting frame index")
 def expand(file_list, output, entry_prefix, n_frames, start_index):
     """Expand file list to event list (3 columns: file //N N)."""
@@ -157,7 +167,9 @@ def grid_search(
         raise click.ClickException(f"Input list file is empty: {list_file}")
 
     if n_subsample > n_events:
-        click.echo(f"Warning: --n-subsample ({n_subsample}) > events in file ({n_events}), using all events")
+        click.echo(
+            f"Warning: --n-subsample ({n_subsample}) > events in file ({n_events}), using all events"
+        )
         n_subsample = n_events
 
     invalid_keys = [k for k, v in grid.items() if not isinstance(v, list)]
@@ -306,7 +318,11 @@ def refine(
 @click.option("--directory", "-d", required=True, type=click.Path(exists=True))
 @click.option("--geometry", "-g", required=True, type=click.Path(exists=True))
 @click.option("--output", "-o", default="refined.geom")
-@click.option("--mille-dir", type=click.Path(exists=True), help="Custom mille directory (auto-detects mille/ or mille_bins/ if not set)")
+@click.option(
+    "--mille-dir",
+    type=click.Path(exists=True),
+    help="Custom mille directory (auto-detects mille/ or mille_bins/ if not set)",
+)
 @click.option("--modules", "-m", multiple=True, default=["crystfel/0.12.0"])
 @click.option("--level", default=2)
 @click.option("--time", default=30)
@@ -316,7 +332,18 @@ def refine(
 @click.option("--camera-length/--no-camera-length", default=True)
 @click.option("--out-of-plane/--no-out-of-plane", default=False)
 def align(
-    directory, geometry, output, mille_dir, modules, level, time, mem, cores, partition, camera_length, out_of_plane
+    directory,
+    geometry,
+    output,
+    mille_dir,
+    modules,
+    level,
+    time,
+    mem,
+    cores,
+    partition,
+    camera_length,
+    out_of_plane,
 ):
     """Run detector alignment on existing mille data."""
     directory = Path(directory)
@@ -356,7 +383,13 @@ def align(
     logs_dir = directory / "align_logs"
     logs_dir.mkdir(exist_ok=True)
 
-    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition, job_name="align_detector")
+    slurm = SlurmConfig(
+        time=time,
+        mem_gb=mem,
+        cores=cores,
+        partition=partition,
+        job_name="align_detector",
+    )
     executor = submitit.AutoExecutor(folder=logs_dir)
     executor.update_parameters(**slurm.to_dict())
 
@@ -367,25 +400,45 @@ def align(
     click.echo(f"Output will be: {directory / output}")
 
 
-@cli.command(
-    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True)
-)
+@cli.command(context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 @click.option("--directory", "-d", required=True, type=click.Path())
 @click.option("--list-file", "-i", required=True, type=click.Path(exists=True))
 @click.option("--geometry", "-g", required=True, type=click.Path(exists=True))
 @click.option("--cell", "-p", type=click.Path(exists=True))
-@click.option("--params", type=click.Path(exists=True), help="JSON params file (optional if using passthrough args)")
+@click.option(
+    "--params",
+    type=click.Path(exists=True),
+    help="JSON params file (optional if using passthrough args)",
+)
 @click.option("--modules", "-m", multiple=True, default=["crystfel/0.12.0"])
 @click.option("--n-jobs", default=100)
 @click.option("--time", default=360)
 @click.option("--mem", default=32)
 @click.option("--cores", default=1, help="CPU cores per job")
 @click.option("--partition", default=None)
-@click.option("--mille/--no-mille", default=False, help="Generate Millepede calibration data")
+@click.option(
+    "--mille/--no-mille", default=False, help="Generate Millepede calibration data"
+)
 @click.option("--mille-level", default=2, help="Millepede hierarchy level (1-3)")
 @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)
 @click.pass_context
-def index(ctx, directory, list_file, geometry, cell, params, modules, n_jobs, time, mem, cores, partition, mille, mille_level, extra_args):
+def index(
+    ctx,
+    directory,
+    list_file,
+    geometry,
+    cell,
+    params,
+    modules,
+    n_jobs,
+    time,
+    mem,
+    cores,
+    partition,
+    mille,
+    mille_level,
+    extra_args,
+):
     """
     Run production indexing.
 
@@ -435,14 +488,24 @@ def concat(directory, output):
     click.echo(f"Concatenated to {output}")
 
 
-@cli.command(
-    context_settings=dict(ignore_unknown_options=True)
-)
+@cli.command(context_settings=dict(ignore_unknown_options=True))
 @click.option("--directory", "-d", required=True, type=click.Path(exists=True))
-@click.option("--symmetry", "-w", required=True, help="Point group symmetry for merging")
-@click.option("--true-symmetry", "-y", default=None, help="True symmetry for ambiguity resolution (triggers ambigator)")
+@click.option(
+    "--symmetry", "-w", required=True, help="Point group symmetry for merging"
+)
+@click.option(
+    "--true-symmetry",
+    "-y",
+    default=None,
+    help="True symmetry for ambiguity resolution (triggers ambigator)",
+)
 @click.option("--output-name", "-o", default="merged")
-@click.option("--input-stream", "-i", type=click.Path(exists=True), help="Input stream (default: auto-concat from directory/streams/)")
+@click.option(
+    "--input-stream",
+    "-i",
+    type=click.Path(exists=True),
+    help="Input stream (default: auto-concat from directory/streams/)",
+)
 @click.option("--modules", "-m", multiple=True, default=["crystfel/0.12.0"])
 @click.option("--model", default="xsphere")
 @click.option("--iterations", default=1)
@@ -450,11 +513,17 @@ def concat(directory, output):
 @click.option("--ncorr", default=1000, help="Correlations for ambigator")
 @click.option("--time", default=1440)
 @click.option("--mem", default=128)
-@click.option("--cores", "-j", default=1, help="CPU cores (used for both SLURM and -j flag)")
+@click.option(
+    "--cores", "-j", default=1, help="CPU cores (used for both SLURM and -j flag)"
+)
 @click.option("--partition", default=None)
 @click.option("--custom-split", type=click.Path(exists=True))
 @click.option("--no-logs/--logs", default=True)
-@click.option("--no-wait", is_flag=True, help="Don't wait for ambigator before submitting partialator")
+@click.option(
+    "--no-wait",
+    is_flag=True,
+    help="Don't wait for ambigator before submitting partialator",
+)
 @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)
 def merge(
     directory,
@@ -532,7 +601,6 @@ def merge(
         if not no_wait:
             click.echo("Waiting for ambigator to complete...")
             ambig.job.wait()
-            result = ambig.job.result()
             click.echo("Ambigator complete")
 
         input_stream = ambig.output_stream
@@ -565,22 +633,41 @@ def merge(
     click.echo(f"Output: {partial.output_hkl}")
 
 
-@cli.command(
-    context_settings=dict(ignore_unknown_options=True)
-)
+@cli.command(context_settings=dict(ignore_unknown_options=True))
 @click.option("--directory", "-d", required=True, type=click.Path())
 @click.option("--input-stream", "-i", required=True, type=click.Path(exists=True))
 @click.option("--true-symmetry", "-y", required=True, help="True point group symmetry")
-@click.option("--apparent-symmetry", "-w", required=True, help="Apparent lattice symmetry")
+@click.option(
+    "--apparent-symmetry", "-w", required=True, help="Apparent lattice symmetry"
+)
 @click.option("--modules", "-m", multiple=True, default=["crystfel/0.12.0"])
 @click.option("--ncorr", default=1000)
-@click.option("--unmerged-output", type=click.Path(), help="Write unmerged reflection list to file")
+@click.option(
+    "--unmerged-output",
+    type=click.Path(),
+    help="Write unmerged reflection list to file",
+)
 @click.option("--time", default=240)
 @click.option("--mem", default=32)
-@click.option("--cores", "-j", default=1, help="CPU cores (used for both SLURM and -j flag)")
+@click.option(
+    "--cores", "-j", default=1, help="CPU cores (used for both SLURM and -j flag)"
+)
 @click.option("--partition", default=None)
 @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)
-def ambigator(directory, input_stream, true_symmetry, apparent_symmetry, modules, ncorr, unmerged_output, time, mem, cores, partition, extra_args):
+def ambigator(
+    directory,
+    input_stream,
+    true_symmetry,
+    apparent_symmetry,
+    modules,
+    ncorr,
+    unmerged_output,
+    time,
+    mem,
+    cores,
+    partition,
+    extra_args,
+):
     """
     Resolve indexing ambiguities.
 
@@ -615,9 +702,7 @@ def ambigator(directory, input_stream, true_symmetry, apparent_symmetry, modules
     click.echo(f"Output: {ambig.output_stream}")
 
 
-@cli.command(
-    context_settings=dict(ignore_unknown_options=True)
-)
+@cli.command(context_settings=dict(ignore_unknown_options=True))
 @click.option("--directory", "-d", required=True, type=click.Path())
 @click.option("--input-stream", "-i", required=True, type=click.Path(exists=True))
 @click.option("--symmetry", "-w", required=True)
@@ -628,7 +713,9 @@ def ambigator(directory, input_stream, true_symmetry, apparent_symmetry, modules
 @click.option("--push-res", default=1.5)
 @click.option("--time", default=1440)
 @click.option("--mem", default=128)
-@click.option("--cores", "-j", default=1, help="CPU cores (used for both SLURM and -j flag)")
+@click.option(
+    "--cores", "-j", default=1, help="CPU cores (used for both SLURM and -j flag)"
+)
 @click.option("--partition", default=None)
 @click.option("--custom-split", type=click.Path(exists=True))
 @click.option("--no-logs/--logs", default=True)
@@ -717,7 +804,9 @@ def init(output):
     click.echo(f"Created {base_path} (base indexamajig params)")
     click.echo(f"Created {grid_path} (grid search params)")
     click.echo("\nUsage:")
-    click.echo(f"  crystflow grid-search --base-params {base_path} --grid-params {grid_path} ...")
+    click.echo(
+        f"  crystflow grid-search --base-params {base_path} --grid-params {grid_path} ..."
+    )
 
 
 @cli.command()
