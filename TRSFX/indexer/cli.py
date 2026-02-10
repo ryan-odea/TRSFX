@@ -779,7 +779,7 @@ def init(output):
         "indexing": "xgandalf",
         "peaks": "peakfinder8",
         "int_radius": "3,4,7",
-        "xgandalf_fast_execution": True
+        "xgandalf_fast_execution": True,
     }
 
     grid_template = {
@@ -823,12 +823,13 @@ def status(directory):
     click.echo(f"Hits: {stats['hits']} ({metrics['hit_rate']:.2f}%)")
     click.echo(f"Indexed: {stats['indexable']} ({metrics['indexing_rate']:.2f}%)")
 
+
 @cli.command()
 @click.option("--directory", "-d", required=True, type=click.Path(exists=True))
 @click.option("--cell", "-p", required=True, type=click.Path)
 @click.option("--symmetry", "-y", required=True, type=str)
 @click.option("--highres", type=int, default=2.0)
-def hkl_stats(directory, cell , symmetry, highres):
+def hkl_stats(directory, cell, symmetry, highres):
     statistics(directory, cell, symmetry, highres)
 
 

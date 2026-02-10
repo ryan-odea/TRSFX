@@ -11,5 +11,5 @@ __all__ = [
     "subsample_list",
     "split_list",
     "read_h5",
-    "write_h5"
+    "write_h5",
 ]

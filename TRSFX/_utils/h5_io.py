@@ -29,6 +29,7 @@ def read_h5(filename: Union[str, Path]) -> List[np.ndarray]:
 
     return frames
 
+
 def write_h5(filename, data_stack):
     """
     Writes data in a generic CXI-compatible format for CrystFEL.
@@ -38,4 +39,4 @@ def write_h5(filename, data_stack):
         entry = f.create_group("entry")
         data_grp = entry.create_group("data")
         dset = data_grp.create_dataset("data", data=data_stack, compression="gzip")
-        dset.attrs['axes'] = np.array(["experiment_identifier", "y", "x"], dtype='S')
+        dset.attrs["axes"] = np.array(["experiment_identifier", "y", "x"], dtype="S")

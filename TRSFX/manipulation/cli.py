@@ -1,11 +1,11 @@
-import click
-import numpy as np
 from pathlib import Path
 
-from .._utils import read_stream, write_stream
+import click
+import numpy as np
+
+from .._utils import read_h5, read_stream, write_h5, write_stream
 from .crystfel_to_meteor import crystfel_to_meteor as func
 from .sample_stream import sample_crystals as sample_func
-from .._utils import read_h5, write_h5
 
 
 @click.group()
@@ -71,18 +71,23 @@ def sample_crystals(input, output, count, percent, seed):
     selected, _ = sample_func(stream, count=count, percent=percent, seed=seed)
     write_stream(stream.preamble, selected, output)
 
+
 @cli.command()
 @click.option(
-    '-i', '--input', 'input_path',
+    "-i",
+    "--input",
+    "input_path",
     required=True,
     type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
-    help="Path to the input HDF5 file containing the frames."
+    help="Path to the input HDF5 file containing the frames.",
 )
 @click.option(
-    '-o', '--output', 'output_path',
+    "-o",
+    "--output",
+    "output_path",
     required=True,
     type=click.Path(file_okay=True, dir_okay=False, path_type=Path),
-    help="Path where the result HDF5 file will be written."
+    help="Path where the result HDF5 file will be written.",
 )
 def subtract_med(input_path: Path, output_path: Path):
     """
@@ -91,9 +96,10 @@ def subtract_med(input_path: Path, output_path: Path):
     frames_list = read_h5(input_path)
     data = np.array(frames_list)
     med = np.median(data, axis=0)
-    
+
     corrected = data.astype(np.float32) - med.astype(np.float32)
     write_h5(output_path, corrected)
-        
+
+
 if __name__ == "__main__":
     cli()

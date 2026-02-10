@@ -41,9 +41,7 @@ def trace(
 
     output_path = Path(output_csv)
     with open(output_path, "w", newline="") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=["filename", "index", "corr_coef"]
-        )
+        writer = csv.DictWriter(f, fieldnames=["filename", "index", "corr_coef"])
         writer.writeheader()
 
         for filepath in files:
