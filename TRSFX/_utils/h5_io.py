@@ -28,3 +28,14 @@ def read_h5(filename: Union[str, Path]) -> List[np.ndarray]:
         f.visititems(visitor_func)
 
     return frames
+
+def write_h5(filename, data_stack):
+    """
+    Writes data in a generic CXI-compatible format for CrystFEL.
+    Structure: /entry/data/data (3D Array)
+    """
+    with h5py.File(filename, "w") as f:
+        entry = f.create_group("entry")
+        data_grp = entry.create_group("data")
+        dset = data_grp.create_dataset("data", data=data_stack, compression="gzip")
+        dset.attrs['axes'] = np.array(["experiment_identifier", "y", "x"], dtype='S')

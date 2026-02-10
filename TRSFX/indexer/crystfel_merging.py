@@ -29,7 +29,7 @@ def _build_flags(params: Dict[str, Any]) -> List[str]:
 class AmbigatorConfig:
     input_stream: Path
     output_stream: Path
-    true_symmetry: str  # -y: true point group symmetry
+    symmetry: str  # -y: true point group symmetry
     apparent_symmetry: str  # -w: apparent lattice symmetry (determines operator)
     params: Dict[str, Any] = field(default_factory=dict)
 
@@ -42,7 +42,7 @@ class AmbigatorConfig:
         cmd = [
             "ambigator",
             f"-o {self.output_stream}",
-            f"-y {self.true_symmetry}",
+            f"-y {self.symmetry}",
             f"-w {self.apparent_symmetry}",
         ]
         cmd.extend(_build_flags(self.params))
@@ -59,7 +59,7 @@ class Ambigator:
 
     Parameters
     ----------
-    true_symmetry : str
+    symmetry : str
         The true point group symmetry of the structure (-y)
     apparent_symmetry : str
         The apparent lattice symmetry (-w), used to determine the ambiguity operator
@@ -69,7 +69,7 @@ class Ambigator:
         self,
         directory: Union[str, Path],
         input_stream: Union[str, Path],
-        true_symmetry: str,
+        symmetry: str,
         apparent_symmetry: str,
         params: Dict[str, Any] | None = None,
         modules: List[str] | None = None,
@@ -92,7 +92,7 @@ class Ambigator:
         self.config = AmbigatorConfig(
             input_stream=self.input_stream,
             output_stream=self.output_stream,
-            true_symmetry=true_symmetry,
+            symmetry=symmetry,
             apparent_symmetry=apparent_symmetry,
             params=params or {},
         )

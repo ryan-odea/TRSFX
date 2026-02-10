@@ -4,7 +4,6 @@ from typing import List, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import pearsonr
 
 from .._utils import read_h5
 
@@ -26,7 +25,7 @@ def trace(
     :param start_idx: Start frame index for correlation calculation
     :param end_idx: End frame index for correlation calculation
     :param log_space: If True, compute correlation on log10(data)
-    :param plot: If True, generate plots for each file (saved as <input_stem>_trace.png)
+    :param plot: If True, generate plots (saved next to -o output as .png)
     """
     input_path = Path(pattern)
 
@@ -43,28 +42,27 @@ def trace(
     output_path = Path(output_csv)
     with open(output_path, "w", newline="") as f:
         writer = csv.DictWriter(
-            f, fieldnames=["filename", "index", "corr_coef", "p_value"]
+            f, fieldnames=["filename", "index", "corr_coef"]
         )
         writer.writeheader()
 
         for filepath in files:
             frames = read_h5(filename=str(filepath))
-            indices, correlations, pvalues = _compute_correlations(
+            indices, correlations = _compute_correlations(
                 frames, start_idx, end_idx, log_space
             )
 
-            for idx, corr, pval in zip(indices, correlations, pvalues):
+            for idx, corr in zip(indices, correlations):
                 writer.writerow(
                     {
                         "filename": str(filepath),
                         "index": idx,
                         "corr_coef": corr,
-                        "p_value": pval,
                     }
                 )
 
             if plot:
-                plot_path = filepath.with_name(f"{filepath.stem}_trace.png")
+                plot_path = Path(output_csv).with_suffix(".png")
                 _plot_trace(indices, correlations, log_space, filepath.stem, plot_path)
 
 
@@ -73,7 +71,7 @@ def _compute_correlations(
     start_idx: int = 0,
     end_idx: int = None,
     log_space: bool = False,
-) -> Tuple[List[int], List[float], List[float]]:
+) -> Tuple[List[int], List[float]]:
     """Core correlation computation logic."""
     n_total = len(frames)
     if end_idx is None or end_idx > n_total:
@@ -81,10 +79,9 @@ def _compute_correlations(
 
     num_pairs = end_idx - start_idx - 1
     if num_pairs < 1:
-        return [], [], []
+        return [], []
 
     correlations = []
-    pvalues = []
     indices = []
 
     for i in range(num_pairs):
@@ -97,7 +94,6 @@ def _compute_correlations(
             valid_mask = (f1 > 0) & (f2 > 0)
             if np.sum(valid_mask) < 2:
                 correlations.append(0.0)
-                pvalues.append(1.0)
                 indices.append(curr_idx)
                 continue
             vals1 = np.log10(f1[valid_mask])
@@ -106,12 +102,15 @@ def _compute_correlations(
             vals1 = f1.ravel()
             vals2 = f2.ravel()
 
-        r, p = pearsonr(vals1, vals2)
-        correlations.append(0.0 if np.isnan(r) else r)
-        pvalues.append(1.0 if np.isnan(p) else p)
+        v1 = vals1 - vals1.mean()
+        v2 = vals2 - vals2.mean()
+        den = np.sqrt((v1**2).sum() * (v2**2).sum())
+        r = (v1 * v2).sum() / den if den > 0 else 0.0
+
+        correlations.append(0.0 if np.isnan(r) else float(r))
         indices.append(curr_idx)
 
-    return indices, correlations, pvalues
+    return indices, correlations
 
 
 def _plot_trace(

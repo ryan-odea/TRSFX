@@ -11,6 +11,7 @@ from ._utils import (concat_streams, edit_geometry_clen, expand_event_list,
 from .crystfel_gridsearch import GridSearch
 from .crystfel_indexing import Indexamajig
 from .crystfel_merging import Ambigator, Partialator
+from .crystfel_stats import statistics
 
 
 def _parse_extra_args(args: tuple) -> dict:
@@ -487,13 +488,13 @@ def concat(directory, output):
 @cli.command(context_settings=dict(ignore_unknown_options=True))
 @click.option("--directory", "-d", required=True, type=click.Path(exists=True))
 @click.option(
-    "--symmetry", "-w", required=True, help="Point group symmetry for merging"
+    "--symmetry", "-y", required=True, help="Point group symmetry for merging"
 )
 @click.option(
-    "--true-symmetry",
-    "-y",
+    "--apparent-symmetry",
+    "-w",
     default=None,
-    help="True symmetry for ambiguity resolution (triggers ambigator)",
+    help="Apparent symmetry for ambiguity resolution (triggers ambigator)",
 )
 @click.option("--output-name", "-o", default="merged")
 @click.option(
@@ -524,7 +525,7 @@ def concat(directory, output):
 def merge(
     directory,
     symmetry,
-    true_symmetry,
+    apparent_symmetry,
     output_name,
     input_stream,
     modules,
@@ -544,19 +545,19 @@ def merge(
     """
     Merge reflections: concat streams → [ambigator] → partialator.
 
-    If --true-symmetry/-y is provided, runs ambigator first to resolve
+    If --apparent-symmetry/-w is provided, runs ambigator first to resolve
     indexing ambiguity, then partialator.
 
     \b
     Examples:
       # Simple merge (no ambiguity)
-      sfx.index merge -d indexing/ -w mmm -j 16
+      sfx.index merge -d indexing/ -y mmm -j 16
 
       # With ambiguity resolution
-      sfx.index merge -d indexing/ -w mmm -y 222 -j 16
+      sfx.index merge -d indexing/ -y mmm -w 222 -j 16
 
       # Extra partialator args after --
-      sfx.index merge -d indexing/ -w mmm -- --min-res=2.0
+      sfx.index merge -d indexing/ -y mmm -- --min-res=2.0
     """
     directory = Path(directory)
 
@@ -578,15 +579,15 @@ def merge(
 
     slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition)
 
-    if true_symmetry:
-        click.echo(f"Running ambigator: -y {true_symmetry} -w {symmetry}")
+    if apparent_symmetry:
+        click.echo(f"Running ambigator: -y {apparent_symmetry} -w {symmetry}")
 
         ambig_params = {"ncorr": ncorr, "j": cores}
         ambig = Ambigator(
             directory=directory,
             input_stream=input_stream,
-            true_symmetry=true_symmetry,
-            apparent_symmetry=symmetry,
+            apparent_symmetry=apparent_symmetry,
+            symmetry=symmetry,
             params=ambig_params,
             modules=list(modules),
             slurm=slurm,
@@ -632,7 +633,7 @@ def merge(
 @cli.command(context_settings=dict(ignore_unknown_options=True))
 @click.option("--directory", "-d", required=True, type=click.Path())
 @click.option("--input-stream", "-i", required=True, type=click.Path(exists=True))
-@click.option("--true-symmetry", "-y", required=True, help="True point group symmetry")
+@click.option("--symmetry", "-y", required=True, help="True point group symmetry")
 @click.option(
     "--apparent-symmetry", "-w", required=True, help="Apparent lattice symmetry"
 )
@@ -653,7 +654,7 @@ def merge(
 def ambigator(
     directory,
     input_stream,
-    true_symmetry,
+    symmetry,
     apparent_symmetry,
     modules,
     ncorr,
@@ -686,8 +687,8 @@ def ambigator(
     ambig = Ambigator(
         directory=directory,
         input_stream=input_stream,
-        true_symmetry=true_symmetry,
         apparent_symmetry=apparent_symmetry,
+        symmetry=symmetry,
         params=params,
         modules=list(modules),
         slurm=slurm,
@@ -701,7 +702,7 @@ def ambigator(
 @cli.command(context_settings=dict(ignore_unknown_options=True))
 @click.option("--directory", "-d", required=True, type=click.Path())
 @click.option("--input-stream", "-i", required=True, type=click.Path(exists=True))
-@click.option("--symmetry", "-w", required=True)
+@click.option("--symmetry", "-y", required=True)
 @click.option("--output-name", "-o", default="merged")
 @click.option("--modules", "-m", multiple=True, default=["crystfel/0.12.0"])
 @click.option("--model", default="xsphere")
@@ -739,7 +740,7 @@ def partialator(
     Extra partialator arguments can be passed after --:
 
     \b
-      sfx.index partialator -d out/ -i data.stream -w mmm -j 16 -- --min-res=2.0
+      sfx.index partialator -d out/ -i data.stream -y mmm -j 16 -- --min-res=2.0
     """
     params = {
         "model": model,
@@ -771,15 +772,14 @@ def partialator(
 
 
 @cli.command()
-@click.option("--output", "-o", default="crystflow_config.json")
+@click.option("--output", "-o", default="index.json")
 def init(output):
     """Generate template config files for grid search."""
     base_template = {
-        "indexing": "xgandalf,asdf,mosflm",
+        "indexing": "xgandalf",
         "peaks": "peakfinder8",
         "int_radius": "3,4,7",
-        "multi": True,
-        "no_check_peaks": True,
+        "xgandalf_fast_execution": True
     }
 
     grid_template = {
@@ -822,6 +822,14 @@ def status(directory):
     click.echo(f"Processed: {stats['processed']}")
     click.echo(f"Hits: {stats['hits']} ({metrics['hit_rate']:.2f}%)")
     click.echo(f"Indexed: {stats['indexable']} ({metrics['indexing_rate']:.2f}%)")
+
+@cli.command()
+@click.option("--directory", "-d", required=True, type=click.Path(exists=True))
+@click.option("--cell", "-p", required=True, type=click.Path)
+@click.option("--symmetry", "-y", required=True, type=str)
+@click.option("--highres", type=int, default=2.0)
+def hkl_stats(directory, cell , symmetry, highres):
+    statistics(directory, cell, symmetry, highres)
 
 
 if __name__ == "__main__":

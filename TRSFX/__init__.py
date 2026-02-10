@@ -3,7 +3,7 @@ from .compare import corr_heatmap, map_correlation
 from .explore import plot_peak_dist, plot_time_series
 from .manipulation import crystfel_to_meteor, sample_crystals
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 __all__ = [
     "map_correlation",
