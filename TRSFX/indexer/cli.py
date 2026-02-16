@@ -826,7 +826,7 @@ def status(directory):
 
 @cli.command()
 @click.option("--directory", "-d", required=True, type=click.Path(exists=True))
-@click.option("--cell", "-p", required=True, type=click.Path)
+@click.option("--cell", "-p", required=True, type=click.Path())
 @click.option("--symmetry", "-y", required=True, type=str)
 @click.option("--highres", type=int, default=2.0)
 def hkl_stats(directory, cell, symmetry, highres):
