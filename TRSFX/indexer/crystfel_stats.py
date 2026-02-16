@@ -1,6 +1,6 @@
 import subprocess
 from pathlib import Path
-from typing import Union, List
+from typing import List, Union
 
 
 def _run(cmd: List[str], cwd: Path, log_path: Path) -> None:
