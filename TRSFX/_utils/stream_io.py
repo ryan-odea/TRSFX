@@ -89,6 +89,7 @@ def read_stream(filepath: str | Path) -> Stream:
         else:
             chunk_content = t
 
+        chunk_content = chunk_content.lstrip("\n")
         filename = re.search(r"Image filename: (.+)", chunk_content)
         event = re.search(r"Event: (.+)", chunk_content)
         serial = re.search(r"Image serial number: (\d+)", chunk_content)
@@ -135,6 +136,7 @@ def write_stream(preamble: str, chunks: list[Chunk], output: str | Path) -> None
     with output.open("w") as f:
         f.write(preamble + "\n")
         for c in chunks:
+            f.write("----- Begin chunk -----\n")
             f.write(c.raw)
             if not c.raw.endswith("\n"):
                 f.write("\n")
