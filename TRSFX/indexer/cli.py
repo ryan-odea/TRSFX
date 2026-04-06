@@ -194,7 +194,9 @@ def grid_search(
     except ValueError as e:
         raise click.ClickException(str(e))
 
-    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition, account=account)
+    slurm = SlurmConfig(
+        time=time, mem_gb=mem, cores=cores, partition=partition, account=account
+    )
 
     try:
         gs = GridSearch(
@@ -295,7 +297,9 @@ def refine(
 ):
     """Generate Millepede calibration data for detector refinement."""
     params_dict = json.loads(Path(params).read_text())
-    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition, account=account)
+    slurm = SlurmConfig(
+        time=time, mem_gb=mem, cores=cores, partition=partition, account=account
+    )
 
     ref = Indexamajig.refine_detector(
         directory=directory,
@@ -458,7 +462,9 @@ def index(
         params_dict = json.loads(Path(params).read_text())
 
     params_dict.update(_parse_extra_args(extra_args))
-    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition, account=account)
+    slurm = SlurmConfig(
+        time=time, mem_gb=mem, cores=cores, partition=partition, account=account
+    )
 
     idx = Indexamajig(
         directory=directory,
@@ -588,7 +594,9 @@ def merge(
     else:
         input_stream = Path(input_stream)
 
-    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition, account=account)
+    slurm = SlurmConfig(
+        time=time, mem_gb=mem, cores=cores, partition=partition, account=account
+    )
 
     if apparent_symmetry:
         click.echo(f"Running ambigator: -y {apparent_symmetry} -w {symmetry}")
@@ -689,7 +697,9 @@ def ambigator(
     \b
       sfx.index ambigator -d out/ -i data.stream -y mmm -w 6/mmm -j 16 -- --corr-matrix
     """
-    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition, account=account)
+    slurm = SlurmConfig(
+        time=time, mem_gb=mem, cores=cores, partition=partition, account=account
+    )
 
     params = {"ncorr": ncorr, "j": cores}
     if unmerged_output:
@@ -769,7 +779,9 @@ def partialator(
         params["no_logs"] = True
 
     params.update(_parse_extra_args(extra_args))
-    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition, account=account)
+    slurm = SlurmConfig(
+        time=time, mem_gb=mem, cores=cores, partition=partition, account=account
+    )
 
     partial = Partialator(
         directory=directory,
