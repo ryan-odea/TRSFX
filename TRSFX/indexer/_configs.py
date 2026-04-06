@@ -11,6 +11,7 @@ class SlurmConfig:
     mem_gb: int = 8
     cores: int = 1
     partition: Optional[str] = None
+    account: Optional[str] = None
     job_name: Optional[str] = None
     extra: Dict[str, Any] = field(default_factory=dict)
 
@@ -23,6 +24,8 @@ class SlurmConfig:
         }
         if self.partition:
             directives["slurm_partition"] = self.partition
+        if self.account:
+            directives["slurm_account"] = self.account
         if self.job_name:
             directives["slurm_job_name"] = self.job_name
         directives.update(self.extra)
@@ -31,7 +34,7 @@ class SlurmConfig:
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "SlurmConfig":
         """Create from a dictionary, extracting known keys."""
-        known = {"time", "mem_gb", "cores", "partition", "job_name"}
+        known = {"time", "mem_gb", "cores", "partition", "account", "job_name"}
         kwargs = {k: v for k, v in d.items() if k in known}
         extra = {k: v for k, v in d.items() if k not in known}
         return cls(**kwargs, extra=extra)
