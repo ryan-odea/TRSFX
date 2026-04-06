@@ -115,6 +115,7 @@ def show_clen(geometry):
 @click.option("--mem", default=8, help="Memory in GB")
 @click.option("--cores", default=1, help="CPU cores per job")
 @click.option("--partition", default=None, help="SLURM partition")
+@click.option("--account", default=None, help="SLURM account")
 @click.option(
     "--base-params",
     required=True,
@@ -139,6 +140,7 @@ def grid_search(
     mem,
     cores,
     partition,
+    account,
     base_params,
     grid_params,
 ):
@@ -192,7 +194,7 @@ def grid_search(
     except ValueError as e:
         raise click.ClickException(str(e))
 
-    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition)
+    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition, account=account)
 
     try:
         gs = GridSearch(
@@ -271,6 +273,7 @@ def grid_analyze(directory, output):
 @click.option("--mem", default=16)
 @click.option("--cores", default=1, help="CPU cores per job")
 @click.option("--partition", default=None)
+@click.option("--account", default=None, help="SLURM account")
 @click.option("--camera-length/--no-camera-length", default=True)
 @click.option("--out-of-plane/--no-out-of-plane", default=False)
 def refine(
@@ -286,12 +289,13 @@ def refine(
     mem,
     cores,
     partition,
+    account,
     camera_length,
     out_of_plane,
 ):
     """Generate Millepede calibration data for detector refinement."""
     params_dict = json.loads(Path(params).read_text())
-    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition)
+    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition, account=account)
 
     ref = Indexamajig.refine_detector(
         directory=directory,
@@ -326,6 +330,7 @@ def refine(
 @click.option("--mem", default=64)
 @click.option("--cores", default=1, help="CPU cores per job")
 @click.option("--partition", default=None)
+@click.option("--account", default=None, help="SLURM account")
 @click.option("--camera-length/--no-camera-length", default=True)
 @click.option("--out-of-plane/--no-out-of-plane", default=False)
 def align(
@@ -339,6 +344,7 @@ def align(
     mem,
     cores,
     partition,
+    account,
     camera_length,
     out_of_plane,
 ):
@@ -385,6 +391,7 @@ def align(
         mem_gb=mem,
         cores=cores,
         partition=partition,
+        account=account,
         job_name="align_detector",
     )
     executor = submitit.AutoExecutor(folder=logs_dir)
@@ -413,6 +420,7 @@ def align(
 @click.option("--mem", default=32)
 @click.option("--cores", default=1, help="CPU cores per job")
 @click.option("--partition", default=None)
+@click.option("--account", default=None, help="SLURM account")
 @click.option(
     "--mille/--no-mille", default=False, help="Generate Millepede calibration data"
 )
@@ -432,6 +440,7 @@ def index(
     mem,
     cores,
     partition,
+    account,
     mille,
     mille_level,
     extra_args,
@@ -449,7 +458,7 @@ def index(
         params_dict = json.loads(Path(params).read_text())
 
     params_dict.update(_parse_extra_args(extra_args))
-    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition)
+    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition, account=account)
 
     idx = Indexamajig(
         directory=directory,
@@ -514,6 +523,7 @@ def concat(directory, output):
     "--cores", "-j", default=1, help="CPU cores (used for both SLURM and -j flag)"
 )
 @click.option("--partition", default=None)
+@click.option("--account", default=None, help="SLURM account")
 @click.option("--custom-split", type=click.Path(exists=True))
 @click.option("--no-logs/--logs", default=True)
 @click.option(
@@ -537,6 +547,7 @@ def merge(
     mem,
     cores,
     partition,
+    account,
     custom_split,
     no_logs,
     no_wait,
@@ -577,7 +588,7 @@ def merge(
     else:
         input_stream = Path(input_stream)
 
-    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition)
+    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition, account=account)
 
     if apparent_symmetry:
         click.echo(f"Running ambigator: -y {apparent_symmetry} -w {symmetry}")
@@ -650,6 +661,7 @@ def merge(
     "--cores", "-j", default=1, help="CPU cores (used for both SLURM and -j flag)"
 )
 @click.option("--partition", default=None)
+@click.option("--account", default=None, help="SLURM account")
 @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)
 def ambigator(
     directory,
@@ -663,6 +675,7 @@ def ambigator(
     mem,
     cores,
     partition,
+    account,
     extra_args,
 ):
     """
@@ -676,7 +689,7 @@ def ambigator(
     \b
       sfx.index ambigator -d out/ -i data.stream -y mmm -w 6/mmm -j 16 -- --corr-matrix
     """
-    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition)
+    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition, account=account)
 
     params = {"ncorr": ncorr, "j": cores}
     if unmerged_output:
@@ -714,6 +727,7 @@ def ambigator(
     "--cores", "-j", default=1, help="CPU cores (used for both SLURM and -j flag)"
 )
 @click.option("--partition", default=None)
+@click.option("--account", default=None, help="SLURM account")
 @click.option("--custom-split", type=click.Path(exists=True))
 @click.option("--no-logs/--logs", default=True)
 @click.argument("extra_args", nargs=-1, type=click.UNPROCESSED)
@@ -730,6 +744,7 @@ def partialator(
     mem,
     cores,
     partition,
+    account,
     custom_split,
     no_logs,
     extra_args,
@@ -754,7 +769,7 @@ def partialator(
         params["no_logs"] = True
 
     params.update(_parse_extra_args(extra_args))
-    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition)
+    slurm = SlurmConfig(time=time, mem_gb=mem, cores=cores, partition=partition, account=account)
 
     partial = Partialator(
         directory=directory,
